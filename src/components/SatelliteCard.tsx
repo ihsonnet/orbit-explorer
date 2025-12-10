@@ -4,11 +4,14 @@ import { cn } from '@/lib/utils';
 
 export interface SatelliteData {
   name: string;
-  noradId: string;
+  noradId?: string;
+  norad_id?: string;
   operator: string;
-  orbitClass: 'LEO' | 'MEO' | 'GEO' | 'HEO';
+  orbitClass?: 'LEO' | 'MEO' | 'GEO' | 'HEO';
+  orbit_class?: 'LEO' | 'MEO' | 'GEO' | 'HEO';
   type: 'COMMUNICATION' | 'GNSS' | 'EARTH_OBSERVATION' | 'WEATHER' | 'SCIENCE' | 'OTHER';
-  impactTags: string[];
+  impactTags?: string[];
+  impact_tags?: string[];
   description?: string;
   elevation?: number;
   azimuth?: number;
@@ -46,6 +49,10 @@ const orbitColors = {
 
 const SatelliteCard = ({ satellite, index = 0 }: SatelliteCardProps) => {
   const Icon = typeIcons[satellite.type];
+  // Support both camelCase and snake_case from API
+  const orbitClass = satellite.orbitClass || satellite.orbit_class || 'LEO';
+  const impactTags = satellite.impactTags || satellite.impact_tags || [];
+  const noradId = satellite.noradId || satellite.norad_id;
 
   return (
     <motion.div
@@ -70,33 +77,44 @@ const SatelliteCard = ({ satellite, index = 0 }: SatelliteCardProps) => {
               <h3 className="font-display font-semibold text-foreground truncate">
                 {satellite.name}
               </h3>
-              <p className="text-sm text-muted-foreground">{satellite.operator}</p>
+              <p className="text-sm text-muted-foreground">
+                {satellite.operator}
+                {noradId && ` • NORAD ${noradId}`}
+              </p>
             </div>
             <span className={cn(
               'px-2 py-1 text-xs font-medium rounded-md border shrink-0',
-              orbitColors[satellite.orbitClass]
+              orbitColors[orbitClass]
             )}>
-              {satellite.orbitClass}
+              {orbitClass}
             </span>
           </div>
 
+          {satellite.description && (
+            <p className="text-sm text-muted-foreground/80 mt-2 line-clamp-2">
+              {satellite.description}
+            </p>
+          )}
+
           {/* Impact Tags */}
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {satellite.impactTags.map((tag) => (
-              <span
-                key={tag}
-                className={cn(
-                  'impact-tag',
-                  tag === 'weather' && 'impact-tag-weather',
-                  tag === 'navigation' && 'impact-tag-nav',
-                  tag === 'internet' && 'impact-tag-comm',
-                  tag === 'earth' && 'impact-tag-earth'
-                )}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          {impactTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {impactTags.map((tag) => (
+                <span
+                  key={tag}
+                  className={cn(
+                    'impact-tag',
+                    tag === 'weather' && 'impact-tag-weather',
+                    tag === 'navigation' && 'impact-tag-nav',
+                    tag === 'internet' && 'impact-tag-comm',
+                    tag === 'earth' && 'impact-tag-earth'
+                  )}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Position info if available */}
           {satellite.elevation !== undefined && (

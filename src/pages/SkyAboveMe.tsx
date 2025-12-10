@@ -1,29 +1,32 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Locate, Search } from 'lucide-react';
+import { MapPin, Locate, Search, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Navigation from '@/components/Navigation';
 import SpaceBackground from '@/components/SpaceBackground';
 import SatelliteCard from '@/components/SatelliteCard';
-import { sampleSatellites, getSatellitesNearLocation, type SatelliteInfo } from '@/lib/satellites';
+import { useSatellitesAbove } from '@/hooks/useSatellites';
 
 const SkyAboveMe = () => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [cityInput, setCityInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [satellites, setSatellites] = useState<Array<SatelliteInfo & { elevation: number; azimuth: number }>>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [locationName, setLocationName] = useState('');
 
+  const { data: satellites = [], isLoading, isError, refetch } = useSatellitesAbove(
+    location?.lat ?? null,
+    location?.lng ?? null
+  );
+
   const handleGeolocation = () => {
-    setIsLoading(true);
+    setIsSearching(true);
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
           setLocation({ lat: latitude, lng: longitude });
           
-          // Get location name via reverse geocoding
           try {
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
@@ -33,14 +36,10 @@ const SkyAboveMe = () => {
           } catch {
             setLocationName('Your Location');
           }
-
-          // Get satellites
-          const visibleSats = getSatellitesNearLocation(latitude, longitude, sampleSatellites);
-          setSatellites(visibleSats);
-          setIsLoading(false);
+          setIsSearching(false);
         },
         () => {
-          setIsLoading(false);
+          setIsSearching(false);
           alert('Unable to get your location. Please enter a city name.');
         }
       );
@@ -50,7 +49,7 @@ const SkyAboveMe = () => {
   const handleCitySearch = async () => {
     if (!cityInput.trim()) return;
     
-    setIsLoading(true);
+    setIsSearching(true);
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=1`
@@ -59,22 +58,20 @@ const SkyAboveMe = () => {
       
       if (data.length > 0) {
         const { lat, lon, display_name } = data[0];
-        const latitude = parseFloat(lat);
-        const longitude = parseFloat(lon);
-        
-        setLocation({ lat: latitude, lng: longitude });
+        setLocation({ lat: parseFloat(lat), lng: parseFloat(lon) });
         setLocationName(display_name.split(',').slice(0, 2).join(','));
-        
-        const visibleSats = getSatellitesNearLocation(latitude, longitude, sampleSatellites);
-        setSatellites(visibleSats);
       } else {
         alert('City not found. Please try another name.');
       }
     } catch {
       alert('Error searching for city. Please try again.');
     }
-    setIsLoading(false);
+    setIsSearching(false);
   };
+
+  const leoCount = satellites.filter(s => s.orbit_class === 'LEO').length;
+  const meoCount = satellites.filter(s => s.orbit_class === 'MEO').length;
+  const geoCount = satellites.filter(s => s.orbit_class === 'GEO').length;
 
   return (
     <div className="min-h-screen relative">
@@ -119,13 +116,13 @@ const SkyAboveMe = () => {
                   onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
                   className="bg-secondary/50 border-border"
                 />
-                <Button onClick={handleCitySearch} disabled={isLoading}>
+                <Button onClick={handleCitySearch} disabled={isSearching}>
                   <Search className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-sm">or</span>
-                <Button variant="cosmic" onClick={handleGeolocation} disabled={isLoading}>
+                <Button variant="cosmic" onClick={handleGeolocation} disabled={isSearching}>
                   <Locate className="w-4 h-4 mr-2" />
                   Use My Location
                 </Button>
@@ -133,8 +130,31 @@ const SkyAboveMe = () => {
             </div>
           </motion.div>
 
+          {/* Error State */}
+          {isError && location && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="card-glow rounded-2xl p-6 mb-8 max-w-2xl mx-auto border border-destructive/50"
+            >
+              <div className="flex items-center gap-3 text-destructive">
+                <AlertCircle className="w-6 h-6" />
+                <div>
+                  <p className="font-semibold">Failed to load satellite data</p>
+                  <p className="text-sm text-muted-foreground">
+                    Make sure your FastAPI backend is running at the configured URL.
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Retry
+              </Button>
+            </motion.div>
+          )}
+
           {/* Results */}
-          {location && (
+          {location && !isError && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -147,15 +167,19 @@ const SkyAboveMe = () => {
                 <p className="text-sm text-muted-foreground mt-1">
                   {location.lat.toFixed(4)}° N, {location.lng.toFixed(4)}° E
                 </p>
+                <Button variant="ghost" size="sm" className="mt-2" onClick={() => refetch()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Data
+                </Button>
               </div>
 
               {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
                   { label: 'Satellites Visible', value: satellites.length },
-                  { label: 'LEO Satellites', value: satellites.filter(s => s.orbitClass === 'LEO').length },
-                  { label: 'MEO Satellites', value: satellites.filter(s => s.orbitClass === 'MEO').length },
-                  { label: 'GEO Satellites', value: satellites.filter(s => s.orbitClass === 'GEO').length },
+                  { label: 'LEO Satellites', value: leoCount },
+                  { label: 'MEO Satellites', value: meoCount },
+                  { label: 'GEO Satellites', value: geoCount },
                 ].map((stat, index) => (
                   <motion.div
                     key={stat.label}
@@ -164,22 +188,41 @@ const SkyAboveMe = () => {
                     transition={{ delay: 0.3 + index * 0.05 }}
                     className="card-glow rounded-xl p-4 text-center"
                   >
-                    <div className="font-display text-3xl font-bold text-primary">{stat.value}</div>
+                    <div className="font-display text-3xl font-bold text-primary">
+                      {isLoading ? '...' : stat.value}
+                    </div>
                     <div className="text-sm text-muted-foreground">{stat.label}</div>
                   </motion.div>
                 ))}
               </div>
 
               {/* Satellite List */}
-              <div className="grid md:grid-cols-2 gap-4">
-                {satellites.map((sat, index) => (
-                  <SatelliteCard
-                    key={sat.noradId}
-                    satellite={sat}
-                    index={index}
-                  />
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-4 text-muted-foreground">Loading satellite data...</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {satellites.map((sat, index) => (
+                    <SatelliteCard
+                      key={sat.norad_id}
+                      satellite={{
+                        name: sat.name,
+                        noradId: sat.norad_id,
+                        operator: sat.operator,
+                        orbitClass: sat.orbit_class,
+                        type: sat.type,
+                        description: sat.description,
+                        impactTags: sat.impact_tags,
+                        elevation: sat.elevation,
+                        azimuth: sat.azimuth,
+                      }}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Educational Note */}
               <motion.div
@@ -210,7 +253,7 @@ const SkyAboveMe = () => {
           )}
 
           {/* Initial State */}
-          {!location && !isLoading && (
+          {!location && !isSearching && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -225,14 +268,14 @@ const SkyAboveMe = () => {
             </motion.div>
           )}
 
-          {isLoading && (
+          {isSearching && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
               <div className="w-16 h-16 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="mt-4 text-muted-foreground">Scanning the sky...</p>
+              <p className="mt-4 text-muted-foreground">Finding your location...</p>
             </motion.div>
           )}
         </div>
