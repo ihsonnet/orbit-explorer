@@ -2,29 +2,16 @@ import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import SpaceBackground from '@/components/SpaceBackground';
 import GlobeVisualization from '@/components/GlobeVisualization';
-import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye, AlertCircle } from 'lucide-react';
-import { useGlobalStats } from '@/hooks/useSatellites';
+import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye } from 'lucide-react';
 
 const Global = () => {
-  const { data: apiStats, isLoading, isError } = useGlobalStats();
-
-  // Fallback stats when API isn't available
-  const defaultStats = [
+  const stats = [
     { icon: Satellite, label: 'Total Active', value: '9,000+', color: 'text-primary' },
     { icon: Radio, label: 'Communication', value: '4,200+', color: 'text-accent' },
     { icon: NavIcon, label: 'Navigation', value: '140+', color: 'text-yellow-400' },
     { icon: Cloud, label: 'Weather', value: '50+', color: 'text-blue-400' },
     { icon: Eye, label: 'Earth Observation', value: '200+', color: 'text-green-400' },
   ];
-
-  // Use API data if available
-  const stats = apiStats ? [
-    { icon: Satellite, label: 'Total Active', value: apiStats.total_satellites.toLocaleString(), color: 'text-primary' },
-    { icon: Radio, label: 'Communication', value: (apiStats.by_type.COMMUNICATION || 0).toLocaleString(), color: 'text-accent' },
-    { icon: NavIcon, label: 'Navigation', value: (apiStats.by_type.GNSS || 0).toLocaleString(), color: 'text-yellow-400' },
-    { icon: Cloud, label: 'Weather', value: (apiStats.by_type.WEATHER || 0).toLocaleString(), color: 'text-blue-400' },
-    { icon: Eye, label: 'Earth Observation', value: (apiStats.by_type.EARTH_OBSERVATION || 0).toLocaleString(), color: 'text-green-400' },
-  ] : defaultStats;
 
   return (
     <div className="min-h-screen relative">
@@ -48,22 +35,10 @@ const Global = () => {
               <span className="gradient-text">Global Satellite View</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Explore Earth's satellite infrastructure. Thousands of active satellites orbit our planet, 
+              Explore Earth's satellite infrastructure. Over 9,000 active satellites orbit our planet, 
               forming an invisible network that powers modern civilization.
             </p>
           </motion.div>
-
-          {/* API Status Banner */}
-          {isError && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2 text-sm text-yellow-400"
-            >
-              <AlertCircle className="w-4 h-4" />
-              <span>Using default data. Connect your FastAPI backend for real-time statistics.</span>
-            </motion.div>
-          )}
 
           {/* Stats Bar */}
           <motion.div
@@ -81,9 +56,7 @@ const Global = () => {
                 className="card-glow rounded-xl p-4 text-center"
               >
                 <stat.icon className={`w-6 h-6 ${stat.color} mx-auto mb-2`} />
-                <div className="font-display text-xl font-bold text-foreground">
-                  {isLoading ? '...' : stat.value}
-                </div>
+                <div className="font-display text-xl font-bold text-foreground">{stat.value}</div>
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
               </motion.div>
             ))}
