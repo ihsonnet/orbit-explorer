@@ -1,0 +1,244 @@
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { MapPin, Locate, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Navigation from '@/components/Navigation';
+import SpaceBackground from '@/components/SpaceBackground';
+import SatelliteCard from '@/components/SatelliteCard';
+import { sampleSatellites, getSatellitesNearLocation, type SatelliteInfo } from '@/lib/satellites';
+
+const SkyAboveMe = () => {
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [cityInput, setCityInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [satellites, setSatellites] = useState<Array<SatelliteInfo & { elevation: number; azimuth: number }>>([]);
+  const [locationName, setLocationName] = useState('');
+
+  const handleGeolocation = () => {
+    setIsLoading(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocation({ lat: latitude, lng: longitude });
+          
+          // Get location name via reverse geocoding
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            );
+            const data = await response.json();
+            setLocationName(data.display_name?.split(',').slice(0, 2).join(',') || 'Your Location');
+          } catch {
+            setLocationName('Your Location');
+          }
+
+          // Get satellites
+          const visibleSats = getSatellitesNearLocation(latitude, longitude, sampleSatellites);
+          setSatellites(visibleSats);
+          setIsLoading(false);
+        },
+        () => {
+          setIsLoading(false);
+          alert('Unable to get your location. Please enter a city name.');
+        }
+      );
+    }
+  };
+
+  const handleCitySearch = async () => {
+    if (!cityInput.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityInput)}&format=json&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lon);
+        
+        setLocation({ lat: latitude, lng: longitude });
+        setLocationName(display_name.split(',').slice(0, 2).join(','));
+        
+        const visibleSats = getSatellitesNearLocation(latitude, longitude, sampleSatellites);
+        setSatellites(visibleSats);
+      } else {
+        alert('City not found. Please try another name.');
+      }
+    } catch {
+      alert('Error searching for city. Please try again.');
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen relative">
+      <SpaceBackground />
+      <Navigation />
+
+      <main className="pt-28 pb-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
+          >
+            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
+              <span className="gradient-text">Sky Above Me</span>
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Discover the satellites orbiting above your location right now. 
+              Space isn't far — it's literally above you.
+            </p>
+          </motion.div>
+
+          {/* Location Input */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="card-glow rounded-2xl p-6 mb-8 max-w-2xl mx-auto"
+          >
+            <h2 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Enter Your Location
+            </h2>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 flex gap-2">
+                <Input
+                  placeholder="Enter city name (e.g., New York, London, Tokyo)"
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
+                  className="bg-secondary/50 border-border"
+                />
+                <Button onClick={handleCitySearch} disabled={isLoading}>
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">or</span>
+                <Button variant="cosmic" onClick={handleGeolocation} disabled={isLoading}>
+                  <Locate className="w-4 h-4 mr-2" />
+                  Use My Location
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Results */}
+          {location && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              {/* Location Info */}
+              <div className="text-center mb-8">
+                <p className="text-muted-foreground mb-2">Showing satellites above</p>
+                <h3 className="font-display text-2xl font-bold text-primary">{locationName}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {location.lat.toFixed(4)}° N, {location.lng.toFixed(4)}° E
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {[
+                  { label: 'Satellites Visible', value: satellites.length },
+                  { label: 'LEO Satellites', value: satellites.filter(s => s.orbitClass === 'LEO').length },
+                  { label: 'MEO Satellites', value: satellites.filter(s => s.orbitClass === 'MEO').length },
+                  { label: 'GEO Satellites', value: satellites.filter(s => s.orbitClass === 'GEO').length },
+                ].map((stat, index) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + index * 0.05 }}
+                    className="card-glow rounded-xl p-4 text-center"
+                  >
+                    <div className="font-display text-3xl font-bold text-primary">{stat.value}</div>
+                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Satellite List */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {satellites.map((sat, index) => (
+                  <SatelliteCard
+                    key={sat.noradId}
+                    satellite={sat}
+                    index={index}
+                  />
+                ))}
+              </div>
+
+              {/* Educational Note */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-8 card-glow rounded-2xl p-6"
+              >
+                <h3 className="font-display text-lg font-semibold mb-3 text-primary">
+                  Did You Know?
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4 text-sm text-muted-foreground">
+                  <div>
+                    <strong className="text-foreground">LEO (Low Earth Orbit)</strong>
+                    <p>160-2,000 km altitude. Includes ISS, Starlink, and Earth observation satellites. Orbital period: ~90 minutes.</p>
+                  </div>
+                  <div>
+                    <strong className="text-foreground">MEO (Medium Earth Orbit)</strong>
+                    <p>2,000-35,786 km altitude. Home to GPS, Galileo, and GLONASS navigation satellites.</p>
+                  </div>
+                  <div>
+                    <strong className="text-foreground">GEO (Geostationary Orbit)</strong>
+                    <p>35,786 km altitude. Stays fixed above one point. Used for weather and communications.</p>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Initial State */}
+          {!location && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-secondary/50 flex items-center justify-center">
+                <MapPin className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground">
+                Enter your location to discover satellites above you
+              </p>
+            </motion.div>
+          )}
+
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-16 h-16 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="mt-4 text-muted-foreground">Scanning the sky...</p>
+            </motion.div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default SkyAboveMe;
