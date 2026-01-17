@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import GlobeVisualization from '@/components/GlobeVisualization';
 import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye } from 'lucide-react';
@@ -14,11 +15,11 @@ const Global = () => {
   ];
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative flex flex-col">
       <SpaceBackground />
       <Navigation />
 
-      <main className="pt-28 pb-20 px-4">
+      <main className="flex-1 pt-28 pb-20 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
@@ -112,6 +113,8 @@ const Global = () => {
           </motion.div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

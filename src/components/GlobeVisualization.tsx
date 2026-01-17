@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
 import { motion } from 'framer-motion';
-import { sampleSatellites, type SatelliteInfo } from '@/lib/satellites';
+import { useSatellitePositions } from '@/hooks/useTLEData';
+import { SatelliteInfo } from '@/lib/satellites';
 
 interface SatellitePoint {
   lat: number;
   lng: number;
   alt: number;
   name: string;
+  noradId: string;
   type: string;
+  operator: string;
+  orbitClass: string;
   color: string;
 }
 
@@ -23,32 +27,36 @@ const typeColors: Record<string, string> = {
 
 const GlobeVisualization = () => {
   const globeRef = useRef<any>();
-  const [satellites, setSatellites] = useState<SatellitePoint[]>([]);
-  const [selectedSatellite, setSelectedSatellite] = useState<SatelliteInfo | null>(null);
+  const satellites = useSatellitePositions(30000); // Update every 30 seconds
+  const [points, setPoints] = useState<SatellitePoint[]>([]);
+  const [selectedSatellite, setSelectedSatellite] = useState<SatellitePoint | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
-    // Generate satellite positions around the globe
-    const satPoints: SatellitePoint[] = sampleSatellites.map((sat, index) => {
-      // Distribute satellites around the globe based on their orbit type
-      const lat = (Math.random() - 0.5) * 160;
-      const lng = (index * 36) % 360 - 180;
-      const alt = sat.orbitClass === 'GEO' ? 0.5 : 
-                  sat.orbitClass === 'MEO' ? 0.3 : 0.1;
+    // Convert satellite positions to globe points
+    const satPoints: SatellitePoint[] = satellites.map((sat) => {
+      // Normalize altitude for visualization (real altitudes range from ~200km to ~35786km)
+      // Scale to 0.05 - 0.5 for visual representation
+      const normalizedAlt = sat.orbitClass === 'GEO' ? 0.5 : 
+                           sat.orbitClass === 'MEO' ? 0.3 : 
+                           0.05 + (sat.alt / 2000) * 0.1;
 
       return {
-        lat,
-        lng,
-        alt,
+        lat: sat.lat,
+        lng: sat.lng,
+        alt: Math.min(normalizedAlt, 0.6),
         name: sat.name,
+        noradId: sat.noradId,
         type: sat.type,
+        operator: sat.operator,
+        orbitClass: sat.orbitClass,
         color: typeColors[sat.type] || typeColors.OTHER,
       };
     });
 
-    setSatellites(satPoints);
-  }, []);
+    setPoints(satPoints);
+  }, [satellites]);
 
   useEffect(() => {
     // Auto-rotate the globe
@@ -79,6 +87,16 @@ const GlobeVisualization = () => {
       {/* Gradient overlay */}
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-b from-transparent via-transparent to-background" />
       
+      {/* Loading state */}
+      {points.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="text-center">
+            <div className="w-12 h-12 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-muted-foreground">Loading satellite positions...</p>
+          </div>
+        </div>
+      )}
+      
       <Globe
         ref={globeRef}
         width={dimensions.width}
@@ -88,23 +106,33 @@ const GlobeVisualization = () => {
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         atmosphereColor="#00d4ff"
         atmosphereAltitude={0.15}
-        pointsData={satellites}
+        pointsData={points}
         pointLat="lat"
         pointLng="lng"
         pointAltitude="alt"
         pointColor="color"
-        pointRadius={0.5}
+        pointRadius={0.3}
         pointLabel={(d: any) => `
-          <div class="bg-card/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-border">
+          <div class="bg-card/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-border shadow-lg">
             <div class="font-semibold text-foreground">${d.name}</div>
-            <div class="text-xs text-muted-foreground">${d.type}</div>
+            <div class="text-xs text-primary">${d.operator}</div>
+            <div class="text-xs text-muted-foreground mt-1">${d.type.replace('_', ' ')} • ${d.orbitClass}</div>
           </div>
         `}
         onPointClick={(point: any) => {
-          const sat = sampleSatellites.find(s => s.name === point.name);
-          if (sat) setSelectedSatellite(sat);
+          setSelectedSatellite(point);
         }}
       />
+
+      {/* Stats overlay */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-4 left-4 z-20 bg-card/80 backdrop-blur-sm rounded-xl px-4 py-2 border border-border"
+      >
+        <div className="text-2xl font-display font-bold text-primary">{points.length}</div>
+        <div className="text-xs text-muted-foreground">Live Satellites</div>
+      </motion.div>
 
       {/* Legend */}
       <motion.div 
@@ -137,7 +165,7 @@ const GlobeVisualization = () => {
         >
           <button 
             onClick={() => setSelectedSatellite(null)}
-            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground text-xl"
           >
             ×
           </button>
@@ -145,13 +173,14 @@ const GlobeVisualization = () => {
             {selectedSatellite.name}
           </h4>
           <p className="text-xs text-primary mt-1">{selectedSatellite.operator}</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {selectedSatellite.description}
-          </p>
+          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+            <p>NORAD ID: {selectedSatellite.noradId}</p>
+            <p>Orbit: {selectedSatellite.orbitClass}</p>
+            <p>Position: {selectedSatellite.lat.toFixed(2)}°, {selectedSatellite.lng.toFixed(2)}°</p>
+          </div>
           <div className="flex flex-wrap gap-1 mt-3">
-            {selectedSatellite.impactTags.map(tag => (
-              <span key={tag} className="impact-tag text-xs">{tag}</span>
-            ))}
+            <span className="impact-tag text-xs">{selectedSatellite.type.replace('_', ' ')}</span>
+            <span className="impact-tag text-xs">{selectedSatellite.orbitClass}</span>
           </div>
         </motion.div>
       )}

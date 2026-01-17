@@ -1,18 +1,29 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Locate, Search } from 'lucide-react';
+import { MapPin, Locate, Search, RefreshCw, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import SatelliteCard from '@/components/SatelliteCard';
-import { sampleSatellites, getSatellitesNearLocation, type SatelliteInfo } from '@/lib/satellites';
+import { useTLEData } from '@/hooks/useTLEData';
+import { SatelliteInfo } from '@/lib/satellites';
+
+interface VisibleSatellite extends SatelliteInfo {
+  elevation: number;
+  azimuth: number;
+  lat: number;
+  lng: number;
+  alt: number;
+}
 
 const SkyAboveMe = () => {
+  const { isLoading: isTLELoading, satelliteCount, getSatellitesAbove, refreshCache, isUpdating, lastUpdate } = useTLEData();
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [cityInput, setCityInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [satellites, setSatellites] = useState<Array<SatelliteInfo & { elevation: number; azimuth: number }>>([]);
+  const [satellites, setSatellites] = useState<VisibleSatellite[]>([]);
   const [locationName, setLocationName] = useState('');
 
   const handleGeolocation = () => {
@@ -23,7 +34,6 @@ const SkyAboveMe = () => {
           const { latitude, longitude } = position.coords;
           setLocation({ lat: latitude, lng: longitude });
           
-          // Get location name via reverse geocoding
           try {
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
@@ -34,9 +44,22 @@ const SkyAboveMe = () => {
             setLocationName('Your Location');
           }
 
-          // Get satellites
-          const visibleSats = getSatellitesNearLocation(latitude, longitude, sampleSatellites);
-          setSatellites(visibleSats);
+          const visibleSats = getSatellitesAbove(latitude, longitude, 5);
+          const mappedSats: VisibleSatellite[] = visibleSats.map(sat => ({
+            name: sat.name,
+            noradId: sat.noradId,
+            operator: sat.operator,
+            orbitClass: sat.orbitClass,
+            type: sat.type,
+            impactTags: sat.impactTags,
+            description: `${sat.type.replace('_', ' ')} satellite at ${sat.alt.toFixed(0)}km altitude.`,
+            elevation: sat.elevation,
+            azimuth: sat.azimuth,
+            lat: sat.lat,
+            lng: sat.lng,
+            alt: sat.alt,
+          }));
+          setSatellites(mappedSats.slice(0, 50));
           setIsLoading(false);
         },
         () => {
@@ -65,8 +88,22 @@ const SkyAboveMe = () => {
         setLocation({ lat: latitude, lng: longitude });
         setLocationName(display_name.split(',').slice(0, 2).join(','));
         
-        const visibleSats = getSatellitesNearLocation(latitude, longitude, sampleSatellites);
-        setSatellites(visibleSats);
+        const visibleSats = getSatellitesAbove(latitude, longitude, 5);
+        const mappedSats: VisibleSatellite[] = visibleSats.map(sat => ({
+          name: sat.name,
+          noradId: sat.noradId,
+          operator: sat.operator,
+          orbitClass: sat.orbitClass,
+          type: sat.type,
+          impactTags: sat.impactTags,
+          description: `${sat.type.replace('_', ' ')} satellite at ${sat.alt.toFixed(0)}km altitude.`,
+          elevation: sat.elevation,
+          azimuth: sat.azimuth,
+          lat: sat.lat,
+          lng: sat.lng,
+          alt: sat.alt,
+        }));
+        setSatellites(mappedSats.slice(0, 50));
       } else {
         alert('City not found. Please try another name.');
       }
@@ -77,11 +114,11 @@ const SkyAboveMe = () => {
   };
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative flex flex-col">
       <SpaceBackground />
       <Navigation />
 
-      <main className="pt-28 pb-20 px-4">
+      <main className="flex-1 pt-28 pb-20 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
@@ -96,6 +133,36 @@ const SkyAboveMe = () => {
               Discover the satellites orbiting above your location right now. 
               Space isn't far — it's literally above you.
             </p>
+          </motion.div>
+
+          {/* TLE Data Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="card-glow rounded-xl p-4 mb-6 max-w-2xl mx-auto flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Database className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {isTLELoading ? 'Loading satellite data...' : `${satelliteCount} satellites in database`}
+                </p>
+                {lastUpdate && (
+                  <p className="text-xs text-muted-foreground">
+                    Last updated: {lastUpdate.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshCache}
+              disabled={isUpdating}
+            >
+              <RefreshCw className={`w-4 h-4 ${isUpdating ? 'animate-spin' : ''}`} />
+            </Button>
           </motion.div>
 
           {/* Location Input */}
@@ -119,13 +186,13 @@ const SkyAboveMe = () => {
                   onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
                   className="bg-secondary/50 border-border"
                 />
-                <Button onClick={handleCitySearch} disabled={isLoading}>
+                <Button onClick={handleCitySearch} disabled={isLoading || isTLELoading}>
                   <Search className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-sm">or</span>
-                <Button variant="cosmic" onClick={handleGeolocation} disabled={isLoading}>
+                <Button variant="cosmic" onClick={handleGeolocation} disabled={isLoading || isTLELoading}>
                   <Locate className="w-4 h-4 mr-2" />
                   Use My Location
                 </Button>
@@ -140,7 +207,6 @@ const SkyAboveMe = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              {/* Location Info */}
               <div className="text-center mb-8">
                 <p className="text-muted-foreground mb-2">Showing satellites above</p>
                 <h3 className="font-display text-2xl font-bold text-primary">{locationName}</h3>
@@ -149,7 +215,6 @@ const SkyAboveMe = () => {
                 </p>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
                   { label: 'Satellites Visible', value: satellites.length },
@@ -170,7 +235,6 @@ const SkyAboveMe = () => {
                 ))}
               </div>
 
-              {/* Satellite List */}
               <div className="grid md:grid-cols-2 gap-4">
                 {satellites.map((sat, index) => (
                   <SatelliteCard
@@ -181,7 +245,6 @@ const SkyAboveMe = () => {
                 ))}
               </div>
 
-              {/* Educational Note */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -209,7 +272,6 @@ const SkyAboveMe = () => {
             </motion.div>
           )}
 
-          {/* Initial State */}
           {!location && !isLoading && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -220,7 +282,7 @@ const SkyAboveMe = () => {
                 <MapPin className="w-12 h-12 text-muted-foreground" />
               </div>
               <p className="text-muted-foreground">
-                Enter your location to discover satellites above you
+                {isTLELoading ? 'Loading satellite database...' : 'Enter your location to discover satellites above you'}
               </p>
             </motion.div>
           )}
@@ -237,6 +299,8 @@ const SkyAboveMe = () => {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };
