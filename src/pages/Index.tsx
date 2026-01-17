@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import ImpactSection from '@/components/ImpactSection';
 import SpaceBackground from '@/components/SpaceBackground';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative flex flex-col">
       <SpaceBackground />
       <Navigation />
 
@@ -190,14 +191,7 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-sm text-muted-foreground">
-            S.P.A.C.E for Everyone — Making space accessible to all. 
-            Data from NASA, ESA, SpaceX, and open satellite databases.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

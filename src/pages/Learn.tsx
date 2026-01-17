@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import {
   Accordion,
@@ -91,11 +92,11 @@ const Learn = () => {
   ];
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative flex flex-col">
       <SpaceBackground />
       <Navigation />
 
-      <main className="pt-28 pb-20 px-4">
+      <main className="flex-1 pt-28 pb-20 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <motion.div
@@ -207,6 +208,8 @@ const Learn = () => {
           </motion.div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };
