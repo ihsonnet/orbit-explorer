@@ -1,11 +1,24 @@
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import GlobeVisualization from '@/components/GlobeVisualization';
+import SatelliteFilterPanel, { SatelliteFilters } from '@/components/SatelliteFilterPanel';
 import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye } from 'lucide-react';
 
 const Global = () => {
+  const [filters, setFilters] = useState<SatelliteFilters>({
+    types: [],
+    orbitClasses: [],
+    operators: [],
+  });
+  const [availableOperators, setAvailableOperators] = useState<string[]>([]);
+
+  const handleOperatorsLoaded = useCallback((operators: string[]) => {
+    setAvailableOperators(operators);
+  }, []);
+
   const stats = [
     { icon: Satellite, label: 'Total Active', value: '9,000+', color: 'text-primary' },
     { icon: Radio, label: 'Communication', value: '4,200+', color: 'text-accent' },
@@ -46,7 +59,7 @@ const Global = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8"
+            className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6"
           >
             {stats.map((stat, index) => (
               <motion.div
@@ -63,6 +76,13 @@ const Global = () => {
             ))}
           </motion.div>
 
+          {/* Filter Panel */}
+          <SatelliteFilterPanel 
+            filters={filters} 
+            onFiltersChange={setFilters}
+            availableOperators={availableOperators}
+          />
+
           {/* Globe */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -70,7 +90,10 @@ const Global = () => {
             transition={{ delay: 0.3 }}
             className="card-glow rounded-2xl overflow-hidden"
           >
-            <GlobeVisualization />
+            <GlobeVisualization 
+              filters={filters}
+              onOperatorsLoaded={handleOperatorsLoaded}
+            />
           </motion.div>
 
           {/* Info Section */}

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { motion } from 'framer-motion';
 import { useSatellitePositions } from '@/hooks/useTLEData';
-import { SatelliteInfo } from '@/lib/satellites';
+import { SatelliteFilters } from './SatelliteFilterPanel';
 
 interface SatellitePoint {
   lat: number;
@@ -25,19 +25,21 @@ const typeColors: Record<string, string> = {
   OTHER: '#6b7280',
 };
 
-const GlobeVisualization = () => {
+interface GlobeVisualizationProps {
+  filters?: SatelliteFilters;
+  onOperatorsLoaded?: (operators: string[]) => void;
+}
+
+const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationProps) => {
   const globeRef = useRef<any>();
-  const satellites = useSatellitePositions(30000); // Update every 30 seconds
-  const [points, setPoints] = useState<SatellitePoint[]>([]);
+  const satellites = useSatellitePositions(30000);
+  const [allPoints, setAllPoints] = useState<SatellitePoint[]>([]);
   const [selectedSatellite, setSelectedSatellite] = useState<SatellitePoint | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
-    // Convert satellite positions to globe points
     const satPoints: SatellitePoint[] = satellites.map((sat) => {
-      // Normalize altitude for visualization (real altitudes range from ~200km to ~35786km)
-      // Scale to 0.05 - 0.5 for visual representation
       const normalizedAlt = sat.orbitClass === 'GEO' ? 0.5 : 
                            sat.orbitClass === 'MEO' ? 0.3 : 
                            0.05 + (sat.alt / 2000) * 0.1;
@@ -55,11 +57,37 @@ const GlobeVisualization = () => {
       };
     });
 
-    setPoints(satPoints);
-  }, [satellites]);
+    setAllPoints(satPoints);
+
+    // Extract unique operators and notify parent
+    if (onOperatorsLoaded && satPoints.length > 0) {
+      const operators = [...new Set(satPoints.map(p => p.operator))].filter(Boolean);
+      onOperatorsLoaded(operators);
+    }
+  }, [satellites, onOperatorsLoaded]);
+
+  // Apply filters to points
+  const filteredPoints = useMemo(() => {
+    if (!filters) return allPoints;
+
+    const hasTypeFilter = filters.types.length > 0;
+    const hasOrbitFilter = filters.orbitClasses.length > 0;
+    const hasOperatorFilter = filters.operators.length > 0;
+
+    if (!hasTypeFilter && !hasOrbitFilter && !hasOperatorFilter) {
+      return allPoints;
+    }
+
+    return allPoints.filter(point => {
+      const matchesType = !hasTypeFilter || filters.types.includes(point.type);
+      const matchesOrbit = !hasOrbitFilter || filters.orbitClasses.includes(point.orbitClass);
+      const matchesOperator = !hasOperatorFilter || filters.operators.includes(point.operator);
+      
+      return matchesType && matchesOrbit && matchesOperator;
+    });
+  }, [allPoints, filters]);
 
   useEffect(() => {
-    // Auto-rotate the globe
     if (globeRef.current) {
       globeRef.current.controls().autoRotate = true;
       globeRef.current.controls().autoRotateSpeed = 0.5;
@@ -84,11 +112,9 @@ const GlobeVisualization = () => {
 
   return (
     <div ref={containerRef} className="relative w-full h-[600px] rounded-2xl overflow-hidden">
-      {/* Gradient overlay */}
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-b from-transparent via-transparent to-background" />
       
-      {/* Loading state */}
-      {points.length === 0 && (
+      {allPoints.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
           <div className="text-center">
             <div className="w-12 h-12 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
@@ -106,7 +132,7 @@ const GlobeVisualization = () => {
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         atmosphereColor="#00d4ff"
         atmosphereAltitude={0.15}
-        pointsData={points}
+        pointsData={filteredPoints}
         pointLat="lat"
         pointLng="lng"
         pointAltitude="alt"
@@ -130,8 +156,10 @@ const GlobeVisualization = () => {
         animate={{ opacity: 1, y: 0 }}
         className="absolute top-4 left-4 z-20 bg-card/80 backdrop-blur-sm rounded-xl px-4 py-2 border border-border"
       >
-        <div className="text-2xl font-display font-bold text-primary">{points.length}</div>
-        <div className="text-xs text-muted-foreground">Live Satellites</div>
+        <div className="text-2xl font-display font-bold text-primary">{filteredPoints.length}</div>
+        <div className="text-xs text-muted-foreground">
+          {filteredPoints.length === allPoints.length ? 'Live Satellites' : `of ${allPoints.length} satellites`}
+        </div>
       </motion.div>
 
       {/* Legend */}
