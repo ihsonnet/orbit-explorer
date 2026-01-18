@@ -138,17 +138,14 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
         htmlAltitude="alt"
         htmlElement={(d: any) => {
           const el = document.createElement('div');
-          el.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${d.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px ${d.color});">
-              <path d="M13 7 9 3 5 7l4 4" />
-              <path d="m17 11 4 4-4 4-4-4" />
-              <path d="m8 12 4 4 6-6-4-4Z" />
-              <path d="m16 8 3-3" />
-              <path d="M9 21a6 6 0 0 0-6-6" />
-            </svg>
-          `;
+          el.style.width = '8px';
+          el.style.height = '8px';
+          el.style.borderRadius = '50%';
+          el.style.background = d.color;
+          el.style.boxShadow = `0 0 6px 2px ${d.color}`;
           el.style.cursor = 'pointer';
           el.style.pointerEvents = 'auto';
+          el.style.transform = 'translate(-50%, -50%)';
           el.title = `${d.name}\n${d.operator}\n${d.type.replace('_', ' ')} • ${d.orbitClass}`;
           el.onclick = () => setSelectedSatellite(d);
           return el;
