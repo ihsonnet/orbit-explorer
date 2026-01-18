@@ -132,24 +132,20 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         atmosphereColor="#00d4ff"
         atmosphereAltitude={0.15}
-        htmlElementsData={filteredPoints}
-        htmlLat="lat"
-        htmlLng="lng"
-        htmlAltitude="alt"
-        htmlElement={(d: any) => {
-          const el = document.createElement('div');
-          el.style.width = '8px';
-          el.style.height = '8px';
-          el.style.borderRadius = '50%';
-          el.style.background = d.color;
-          el.style.boxShadow = `0 0 6px 2px ${d.color}`;
-          el.style.cursor = 'pointer';
-          el.style.pointerEvents = 'auto';
-          el.style.transform = 'translate(-50%, -50%)';
-          el.title = `${d.name}\n${d.operator}\n${d.type.replace('_', ' ')} • ${d.orbitClass}`;
-          el.onclick = () => setSelectedSatellite(d);
-          return el;
-        }}
+        pointsData={filteredPoints}
+        pointLat="lat"
+        pointLng="lng"
+        pointAltitude="alt"
+        pointColor="color"
+        pointRadius={0.4}
+        pointLabel={(d: any) => `
+          <div style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div style="font-weight: 600; color: white;">${d.name}</div>
+            <div style="font-size: 11px; color: ${d.color}; margin-top: 2px;">${d.operator}</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">${d.type.replace('_', ' ')} • ${d.orbitClass}</div>
+          </div>
+        `}
+        onPointClick={(point: any) => setSelectedSatellite(point)}
       />
 
       {/* Stats overlay */}
