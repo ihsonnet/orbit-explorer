@@ -132,20 +132,27 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         atmosphereColor="#00d4ff"
         atmosphereAltitude={0.15}
-        pointsData={filteredPoints}
-        pointLat="lat"
-        pointLng="lng"
-        pointAltitude="alt"
-        pointColor="color"
-        pointRadius={0.4}
-        pointLabel={(d: any) => `
-          <div style="background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-            <div style="font-weight: 600; color: white;">${d.name}</div>
-            <div style="font-size: 11px; color: ${d.color}; margin-top: 2px;">${d.operator}</div>
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">${d.type.replace('_', ' ')} • ${d.orbitClass}</div>
-          </div>
-        `}
-        onPointClick={(point: any) => setSelectedSatellite(point)}
+        htmlElementsData={filteredPoints}
+        htmlLat="lat"
+        htmlLng="lng"
+        htmlAltitude="alt"
+        htmlElement={(d: any) => {
+          const el = document.createElement('div');
+          el.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${d.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px ${d.color});">
+              <path d="M13 7 9 3 5 7l4 4" />
+              <path d="m17 11 4 4-4 4-4-4" />
+              <path d="m8 12 4 4 6-6-4-4Z" />
+              <path d="m16 8 3-3" />
+              <path d="M9 21a6 6 0 0 0-6-6" />
+            </svg>
+          `;
+          el.style.cursor = 'pointer';
+          el.style.pointerEvents = 'auto';
+          el.title = `${d.name}\n${d.operator}\n${d.type.replace('_', ' ')} • ${d.orbitClass}`;
+          el.onclick = () => setSelectedSatellite(d);
+          return el;
+        }}
       />
 
       {/* Stats overlay */}
