@@ -106,7 +106,7 @@ const Index = () => {
                   className="absolute inset-8"
                 >
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="w-4 h-4 bg-primary rounded-full satellite-pulse" />
+                    <Satellite className="w-5 h-5 text-primary satellite-pulse" />
                   </div>
                 </motion.div>
 
@@ -116,7 +116,7 @@ const Index = () => {
                   className="absolute inset-16"
                 >
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-                    <div className="w-3 h-3 bg-accent rounded-full satellite-pulse" />
+                    <Satellite className="w-4 h-4 text-accent satellite-pulse" />
                   </div>
                 </motion.div>
 
@@ -126,7 +126,7 @@ const Index = () => {
                   className="absolute inset-24"
                 >
                   <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2">
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full satellite-pulse" />
+                    <Satellite className="w-4 h-4 text-yellow-400 satellite-pulse" />
                   </div>
                 </motion.div>
 
