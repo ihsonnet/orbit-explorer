@@ -34,7 +34,7 @@ const Index = () => {
               </motion.div>
 
               <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-                <span className="gradient-text">S.P.A.C.E</span>
+                <span className="gradient-text">S.P.A.C.E.</span>
                 <br />
                 <span className="text-foreground">for Everyone</span>
               </h1>
