@@ -6,7 +6,7 @@ import SpaceBackground from '@/components/SpaceBackground';
 import GlobeVisualization from '@/components/GlobeVisualization';
 import SatelliteFilterPanel, { SatelliteFilters } from '@/components/SatelliteFilterPanel';
 import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye } from 'lucide-react';
-
+import { ORBIT_COLORS } from '@/lib/orbitColors';
 const Global = () => {
   const [filters, setFilters] = useState<SatelliteFilters>({
     types: [],
@@ -104,7 +104,7 @@ const Global = () => {
             className="mt-12 grid md:grid-cols-3 gap-6"
           >
             <div className="card-glow rounded-2xl p-6">
-              <h3 className="font-display text-lg font-semibold mb-3 text-primary">
+              <h3 className={`font-display text-lg font-semibold mb-3 ${ORBIT_COLORS.LEO.tailwind}`}>
                 LEO - Low Earth Orbit
               </h3>
               <p className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ const Global = () => {
               </p>
             </div>
             <div className="card-glow rounded-2xl p-6">
-              <h3 className="font-display text-lg font-semibold mb-3 text-yellow-400">
+              <h3 className={`font-display text-lg font-semibold mb-3 ${ORBIT_COLORS.MEO.tailwind}`}>
                 MEO - Medium Earth Orbit
               </h3>
               <p className="text-sm text-muted-foreground">
@@ -124,7 +124,7 @@ const Global = () => {
               </p>
             </div>
             <div className="card-glow rounded-2xl p-6">
-              <h3 className="font-display text-lg font-semibold mb-3 text-accent">
+              <h3 className={`font-display text-lg font-semibold mb-3 ${ORBIT_COLORS.GEO.tailwind}`}>
                 GEO - Geostationary Orbit
               </h3>
               <p className="text-sm text-muted-foreground">

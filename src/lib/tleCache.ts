@@ -124,25 +124,11 @@ export async function updateTLECache(forceUpdate = false): Promise<TLECache> {
     return cache;
   }
   
-  console.log('Updating TLE cache from Celestrak...');
+  console.log('Updating TLE cache from Celestrak (fetching all active satellites)...');
   
-  // Fetch from multiple categories
-  const categories: Array<keyof typeof CELESTRAK_ENDPOINTS> = [
-    'stations',
-    'gps',
-    'galileo',
-    'weather',
-    'noaa',
-    'goes',
-    'iridium',
-  ];
-  
-  // Fetch Starlink separately (it's large)
-  const starlinkPromise = fetchCategoryTLE('starlink').then(entries => entries.slice(0, 100)); // Limit Starlink
-  
+  // Fetch ALL active satellites in one call - this includes ~9000+ satellites
   const results = await Promise.all([
-    ...categories.map(cat => fetchCategoryTLE(cat)),
-    starlinkPromise,
+    fetchCategoryTLE('active'), // This fetches all active satellites
   ]);
   
   // Merge all entries into cache

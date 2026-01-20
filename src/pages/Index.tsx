@@ -6,6 +6,7 @@ import ImpactSection from '@/components/ImpactSection';
 import SpaceBackground from '@/components/SpaceBackground';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { ORBIT_COLORS } from '@/lib/orbitColors';
 
 const Index = () => {
   return (
@@ -99,34 +100,36 @@ const Index = () => {
                   <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 via-green-400 to-blue-600 shadow-2xl shadow-blue-500/30" />
                 </div>
 
-                {/* Satellites */}
+                {/* Satellites - LEO (innermost, fastest) */}
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                   className="absolute inset-8"
                 >
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <Satellite className="w-5 h-5 text-primary satellite-pulse" />
+                    <Satellite className={`w-5 h-5 ${ORBIT_COLORS.LEO.tailwind} satellite-pulse`} />
                   </div>
                 </motion.div>
 
+                {/* Satellites - GEO (outer, slowest) */}
                 <motion.div
                   animate={{ rotate: -360 }}
                   transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
                   className="absolute inset-16"
                 >
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-                    <Satellite className="w-4 h-4 text-accent satellite-pulse" />
+                    <Satellite className={`w-4 h-4 ${ORBIT_COLORS.GEO.tailwind} satellite-pulse`} />
                   </div>
                 </motion.div>
 
+                {/* Satellites - MEO (middle) */}
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
                   className="absolute inset-24"
                 >
                   <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2">
-                    <Satellite className="w-4 h-4 text-yellow-400 satellite-pulse" />
+                    <Satellite className={`w-4 h-4 ${ORBIT_COLORS.MEO.tailwind} satellite-pulse`} />
                   </div>
                 </motion.div>
 
