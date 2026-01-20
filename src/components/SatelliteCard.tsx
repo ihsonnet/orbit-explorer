@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Satellite, Radio, Navigation, Cloud, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getOrbitBadgeClasses, OrbitClass } from '@/lib/orbitColors';
 
 export interface SatelliteData {
   name: string;
@@ -37,13 +38,6 @@ const typeColors = {
   OTHER: 'text-muted-foreground',
 };
 
-const orbitColors = {
-  LEO: 'bg-primary/20 text-primary border-primary/30',
-  MEO: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  GEO: 'bg-accent/20 text-accent border-accent/30',
-  HEO: 'bg-green-500/20 text-green-400 border-green-500/30',
-};
-
 const SatelliteCard = ({ satellite, index = 0 }: SatelliteCardProps) => {
   const Icon = typeIcons[satellite.type];
 
@@ -74,7 +68,7 @@ const SatelliteCard = ({ satellite, index = 0 }: SatelliteCardProps) => {
             </div>
             <span className={cn(
               'px-2 py-1 text-xs font-medium rounded-md border shrink-0',
-              orbitColors[satellite.orbitClass]
+              getOrbitBadgeClasses(satellite.orbitClass as OrbitClass)
             )}>
               {satellite.orbitClass}
             </span>

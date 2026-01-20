@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Filter, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ORBIT_COLORS } from '@/lib/orbitColors';
 
 export interface SatelliteFilters {
   types: string[];
@@ -25,10 +26,10 @@ const SATELLITE_TYPES = [
 ];
 
 const ORBIT_CLASSES = [
-  { id: 'LEO', label: 'LEO', description: 'Low Earth Orbit', color: 'text-primary' },
-  { id: 'MEO', label: 'MEO', description: 'Medium Earth Orbit', color: 'text-yellow-400' },
-  { id: 'GEO', label: 'GEO', description: 'Geostationary', color: 'text-accent' },
-  { id: 'HEO', label: 'HEO', description: 'Highly Elliptical', color: 'text-orange-400' },
+  { id: 'LEO' as const, label: 'LEO', description: 'Low Earth Orbit' },
+  { id: 'MEO' as const, label: 'MEO', description: 'Medium Earth Orbit' },
+  { id: 'GEO' as const, label: 'GEO', description: 'Geostationary' },
+  { id: 'HEO' as const, label: 'HEO', description: 'Highly Elliptical' },
 ];
 
 const MAJOR_OPERATORS = [
@@ -142,7 +143,7 @@ const SatelliteFilterPanel = ({ filters, onFiltersChange, availableOperators }: 
                   border
                 `}
               >
-                <span className={orbit.color}>{orbit.id}</span>
+                <span className={ORBIT_COLORS[orbit.id].tailwind}>{orbit.id}</span>
                 <span className="hidden sm:inline text-muted-foreground">({orbit.description})</span>
                 {isActive && <Check className="w-3 h-3 text-primary" />}
               </button>
