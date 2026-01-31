@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import Globe from 'react-globe.gl';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTLEData, useSatellitePositions } from '@/hooks/useTLEData';
 import { SatelliteFilters } from './SatelliteFilterPanel';
 import { Progress } from './ui/progress';
+import { ORBIT_COLORS } from '@/lib/orbitColors';
+import { Check, X } from 'lucide-react';
 
 interface SatellitePoint {
   lat: number;
@@ -26,19 +28,76 @@ const typeColors: Record<string, string> = {
   OTHER: '#6b7280',
 };
 
+const SATELLITE_TYPES = [
+  { id: 'COMMUNICATION', label: 'Communication' },
+  { id: 'GNSS', label: 'Navigation' },
+  { id: 'WEATHER', label: 'Weather' },
+  { id: 'EARTH_OBSERVATION', label: 'Earth Obs' },
+  { id: 'SCIENCE', label: 'Science' },
+  { id: 'OTHER', label: 'Other' },
+];
+
+const ORBIT_CLASSES = [
+  { id: 'LEO' as const, label: 'LEO' },
+  { id: 'MEO' as const, label: 'MEO' },
+  { id: 'GEO' as const, label: 'GEO' },
+  { id: 'HEO' as const, label: 'HEO' },
+];
+
+const MAJOR_OPERATORS = [
+  'SpaceX',
+  'NASA',
+  'NOAA',
+  'ESA',
+  'US Space Force',
+  'Roscosmos',
+  'Iridium',
+];
+
 interface GlobeVisualizationProps {
-  filters?: SatelliteFilters;
+  filters: SatelliteFilters;
+  onFiltersChange: (filters: SatelliteFilters) => void;
   onOperatorsLoaded?: (operators: string[]) => void;
 }
 
-const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationProps) => {
+const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: GlobeVisualizationProps) => {
   const globeRef = useRef<any>();
   const { isLoading, loadProgress, satelliteCount } = useTLEData();
   const satellites = useSatellitePositions(30000);
   const [allPoints, setAllPoints] = useState<SatellitePoint[]>([]);
   const [selectedSatellite, setSelectedSatellite] = useState<SatellitePoint | null>(null);
+  const [satelliteScreenPos, setSatelliteScreenPos] = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [availableOperators, setAvailableOperators] = useState<string[]>([]);
+
+  // Filter toggle functions
+  const toggleType = (typeId: string) => {
+    const newTypes = filters.types.includes(typeId)
+      ? filters.types.filter(t => t !== typeId)
+      : [...filters.types, typeId];
+    onFiltersChange({ ...filters, types: newTypes });
+  };
+
+  const toggleOrbitClass = (orbitId: string) => {
+    const newOrbits = filters.orbitClasses.includes(orbitId)
+      ? filters.orbitClasses.filter(o => o !== orbitId)
+      : [...filters.orbitClasses, orbitId];
+    onFiltersChange({ ...filters, orbitClasses: newOrbits });
+  };
+
+  const toggleOperator = (operator: string) => {
+    const newOperators = filters.operators.includes(operator)
+      ? filters.operators.filter(o => o !== operator)
+      : [...filters.operators, operator];
+    onFiltersChange({ ...filters, operators: newOperators });
+  };
+
+  const clearAllFilters = () => {
+    onFiltersChange({ types: [], orbitClasses: [], operators: [] });
+  };
+
+  const hasActiveFilters = filters.types.length > 0 || filters.orbitClasses.length > 0 || filters.operators.length > 0;
 
   useEffect(() => {
     const satPoints: SatellitePoint[] = satellites.map((sat) => {
@@ -61,10 +120,13 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
 
     setAllPoints(satPoints);
 
-    // Extract unique operators and notify parent
-    if (onOperatorsLoaded && satPoints.length > 0) {
+    // Extract unique operators
+    if (satPoints.length > 0) {
       const operators = [...new Set(satPoints.map(p => p.operator))].filter(Boolean);
-      onOperatorsLoaded(operators);
+      setAvailableOperators(operators);
+      if (onOperatorsLoaded) {
+        onOperatorsLoaded(operators);
+      }
     }
   }, [satellites, onOperatorsLoaded]);
 
@@ -81,7 +143,6 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
       const sampledPoints: SatellitePoint[] = [];
       const typeGroups: Record<string, SatellitePoint[]> = {};
       
-      // Group satellites by type
       allPoints.forEach(point => {
         if (!typeGroups[point.type]) {
           typeGroups[point.type] = [];
@@ -89,7 +150,6 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
         typeGroups[point.type].push(point);
       });
       
-      // Sample each type to max 300
       Object.values(typeGroups).forEach(group => {
         if (group.length <= MAX_PER_TYPE) {
           sampledPoints.push(...group);
@@ -113,6 +173,32 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
     });
   }, [allPoints, filters]);
 
+  // Update satellite screen position when selected
+  useEffect(() => {
+    if (!selectedSatellite || !globeRef.current) {
+      setSatelliteScreenPos(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      if (!globeRef.current) return;
+      
+      const coords = globeRef.current.getScreenCoords(
+        selectedSatellite.lat,
+        selectedSatellite.lng,
+        selectedSatellite.alt
+      );
+      
+      if (coords && coords.x !== undefined && coords.y !== undefined) {
+        setSatelliteScreenPos({ x: coords.x, y: coords.y });
+      }
+    };
+
+    updatePosition();
+    const interval = setInterval(updatePosition, 100);
+    return () => clearInterval(interval);
+  }, [selectedSatellite]);
+
   useEffect(() => {
     if (globeRef.current) {
       globeRef.current.controls().autoRotate = true;
@@ -135,6 +221,9 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  // Combine major operators with available operators
+  const displayOperators = [...new Set([...MAJOR_OPERATORS, ...availableOperators])].slice(0, 10);
 
   return (
     <div ref={containerRef} className="relative w-full h-[600px] rounded-2xl overflow-hidden">
@@ -187,68 +276,162 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
         }}
       />
 
-      {/* Stats overlay */}
+      {/* Top Left: Stats + Orbit Class Filters */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute top-4 left-4 z-20 bg-card/80 backdrop-blur-sm rounded-xl px-4 py-2 border border-border"
+        className="absolute top-4 left-4 z-20 space-y-3"
       >
-        <div className="text-2xl font-display font-bold text-primary">{filteredPoints.length}</div>
-        <div className="text-xs text-muted-foreground">
-          {filteredPoints.length === allPoints.length ? 'Live Satellites' : `of ${allPoints.length} satellites`}
+        {/* Satellite Count */}
+        <div className="bg-card/90 backdrop-blur-sm rounded-xl px-4 py-3 border border-border">
+          <div className="text-2xl font-display font-bold text-primary">{filteredPoints.length.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">
+            {hasActiveFilters 
+              ? `of ${allPoints.length.toLocaleString()} satellites` 
+              : `Showing (max 300/type)`}
+          </div>
+          {hasActiveFilters && (
+            <button 
+              onClick={clearAllFilters}
+              className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              <X className="w-3 h-3" /> Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Orbit Class Filters */}
+        <div className="bg-card/90 backdrop-blur-sm rounded-xl p-3 border border-border">
+          <p className="text-xs text-muted-foreground mb-2 font-medium">Orbit Class</p>
+          <div className="flex flex-wrap gap-1.5">
+            {ORBIT_CLASSES.map((orbit) => {
+              const isActive = filters.orbitClasses.includes(orbit.id);
+              const colors = ORBIT_COLORS[orbit.id];
+              return (
+                <button
+                  key={orbit.id}
+                  onClick={() => toggleOrbitClass(orbit.id)}
+                  className={`
+                    flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all
+                    ${isActive 
+                      ? `${colors.bg} ${colors.border} ${colors.tailwind}` 
+                      : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    }
+                    border
+                  `}
+                >
+                  {orbit.label}
+                  {isActive && <Check className="w-3 h-3" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </motion.div>
 
-      {/* Legend */}
+      {/* Bottom Left: Satellite Type Filters (Legend) */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="absolute bottom-6 left-6 z-20 bg-card/80 backdrop-blur-sm rounded-xl p-4 border border-border"
+        className="absolute bottom-6 left-4 z-20 bg-card/90 backdrop-blur-sm rounded-xl p-4 border border-border"
       >
         <h4 className="font-display text-sm font-semibold mb-3 text-foreground">Satellite Types</h4>
-        <div className="space-y-2">
-          {Object.entries(typeColors).map(([type, color]) => (
-            <div key={type} className="flex items-center gap-2 text-xs">
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-muted-foreground capitalize">
-                {type.replace('_', ' ')}
-              </span>
-            </div>
-          ))}
+        <div className="space-y-1.5">
+          {SATELLITE_TYPES.map((type) => {
+            const isActive = filters.types.includes(type.id);
+            const color = typeColors[type.id];
+            return (
+              <button
+                key={type.id}
+                onClick={() => toggleType(type.id)}
+                className={`
+                  flex items-center gap-2 w-full text-left px-2 py-1 rounded-lg text-xs transition-all
+                  ${isActive 
+                    ? 'bg-primary/20 text-foreground' 
+                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                  }
+                `}
+              >
+                <div 
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: color }}
+                />
+                <span className="flex-1">{type.label}</span>
+                {isActive && <Check className="w-3 h-3 text-primary" />}
+              </button>
+            );
+          })}
         </div>
       </motion.div>
 
-      {/* Selected satellite info */}
-      {selectedSatellite && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-6 right-6 z-20 bg-card/90 backdrop-blur-sm rounded-xl p-4 border border-border max-w-xs"
-        >
-          <button 
-            onClick={() => setSelectedSatellite(null)}
-            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground text-xl"
+      {/* Right Side: Operator Filters */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="absolute top-4 right-4 bottom-6 z-20 w-36"
+      >
+        <div className="bg-card/90 backdrop-blur-sm rounded-xl p-3 border border-border h-full overflow-hidden flex flex-col">
+          <p className="text-xs text-muted-foreground mb-2 font-medium">Operators</p>
+          <div className="flex-1 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+            {displayOperators.map((operator) => {
+              const isActive = filters.operators.includes(operator);
+              return (
+                <button
+                  key={operator}
+                  onClick={() => toggleOperator(operator)}
+                  className={`
+                    flex items-center gap-1 w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all
+                    ${isActive 
+                      ? 'bg-primary/20 text-foreground' 
+                      : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                    }
+                  `}
+                >
+                  <span className="flex-1 truncate">{operator}</span>
+                  {isActive && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Satellite Info - Follows satellite position */}
+      <AnimatePresence>
+        {selectedSatellite && satelliteScreenPos && (
+          <motion.div
+            key="satellite-info"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            style={{
+              position: 'absolute',
+              left: Math.min(Math.max(satelliteScreenPos.x + 20, 10), dimensions.width - 200),
+              top: Math.min(Math.max(satelliteScreenPos.y - 60, 10), dimensions.height - 150),
+            }}
+            className="z-30 bg-card/95 backdrop-blur-sm rounded-xl p-3 border border-border max-w-[180px] pointer-events-auto"
           >
-            ×
-          </button>
-          <h4 className="font-display font-semibold text-foreground pr-6">
-            {selectedSatellite.name}
-          </h4>
-          <p className="text-xs text-primary mt-1">{selectedSatellite.operator}</p>
-          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-            <p>NORAD ID: {selectedSatellite.noradId}</p>
-            <p>Orbit: {selectedSatellite.orbitClass}</p>
-            <p>Position: {selectedSatellite.lat.toFixed(2)}°, {selectedSatellite.lng.toFixed(2)}°</p>
-          </div>
-          <div className="flex flex-wrap gap-1 mt-3">
-            <span className="impact-tag text-xs">{selectedSatellite.type.replace('_', ' ')}</span>
-            <span className="impact-tag text-xs">{selectedSatellite.orbitClass}</span>
-          </div>
-        </motion.div>
-      )}
+            <button 
+              onClick={() => setSelectedSatellite(null)}
+              className="absolute -top-2 -right-2 w-5 h-5 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+            >
+              ×
+            </button>
+            <h4 className="font-display font-semibold text-foreground text-sm leading-tight">
+              {selectedSatellite.name}
+            </h4>
+            <p className="text-xs text-primary mt-0.5">{selectedSatellite.operator}</p>
+            <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+              <p>ID: {selectedSatellite.noradId}</p>
+              <p>{selectedSatellite.lat.toFixed(2)}°, {selectedSatellite.lng.toFixed(2)}°</p>
+            </div>
+            <div className="flex flex-wrap gap-1 mt-2">
+              <span className="impact-tag text-[10px] px-1.5 py-0.5">{selectedSatellite.type.replace('_', ' ')}</span>
+              <span className="impact-tag text-[10px] px-1.5 py-0.5">{selectedSatellite.orbitClass}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
