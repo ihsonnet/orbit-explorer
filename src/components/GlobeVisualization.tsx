@@ -65,8 +65,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
   const { isLoading, loadProgress, satelliteCount } = useTLEData();
   const satellites = useSatellitePositions(30000);
   const [allPoints, setAllPoints] = useState<SatellitePoint[]>([]);
-  const [hoveredSatellite, setHoveredSatellite] = useState<SatellitePoint | null>(null);
-  const [pinnedSatellite, setPinnedSatellite] = useState<SatellitePoint | null>(null);
+  const [selectedSatellite, setSelectedSatellite] = useState<SatellitePoint | null>(null);
   const [satelliteScreenPos, setSatelliteScreenPos] = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -138,9 +137,9 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     const hasOperatorFilter = filters?.operators.length > 0;
     const hasAnyFilter = hasTypeFilter || hasOrbitFilter || hasOperatorFilter;
 
-    // When no filters applied, limit each satellite type to 300 for smooth initial experience
+    // When no filters applied, limit each satellite type to 1000 for smooth initial experience
     if (!hasAnyFilter) {
-      const MAX_PER_TYPE = 300;
+      const MAX_PER_TYPE = 1000;
       const sampledPoints: SatellitePoint[] = [];
       const typeGroups: Record<string, SatellitePoint[]> = {};
       
@@ -174,12 +173,9 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     });
   }, [allPoints, filters]);
 
-  // The satellite to display (pinned takes priority over hovered)
-  const displayedSatellite = pinnedSatellite || hoveredSatellite;
-
-  // Update satellite screen position when displayed
+  // Update satellite screen position when selected
   useEffect(() => {
-    if (!displayedSatellite || !globeRef.current) {
+    if (!selectedSatellite || !globeRef.current) {
       setSatelliteScreenPos(null);
       return;
     }
@@ -188,9 +184,9 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       if (!globeRef.current) return;
       
       const coords = globeRef.current.getScreenCoords(
-        displayedSatellite.lat,
-        displayedSatellite.lng,
-        displayedSatellite.alt
+        selectedSatellite.lat,
+        selectedSatellite.lng,
+        selectedSatellite.alt
       );
       
       if (coords && coords.x !== undefined && coords.y !== undefined) {
@@ -201,7 +197,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     updatePosition();
     const interval = setInterval(updatePosition, 100);
     return () => clearInterval(interval);
-  }, [displayedSatellite]);
+  }, [selectedSatellite]);
 
   useEffect(() => {
     if (globeRef.current) {
@@ -274,9 +270,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
           `;
           el.style.cursor = 'pointer';
           el.style.pointerEvents = 'auto';
-          el.onmouseenter = () => setHoveredSatellite(d);
-          el.onmouseleave = () => setHoveredSatellite(null);
-          el.onclick = () => setPinnedSatellite(prev => prev?.noradId === d.noradId ? null : d);
+          el.onclick = () => setSelectedSatellite(prev => prev?.noradId === d.noradId ? null : d);
           return el;
         }}
       />
@@ -431,7 +425,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
 
       {/* Satellite Info - Follows satellite position */}
       <AnimatePresence>
-        {displayedSatellite && satelliteScreenPos && (
+        {selectedSatellite && satelliteScreenPos && (
           <motion.div
             key="satellite-info"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -444,25 +438,23 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
             }}
             className="z-30 bg-card/95 backdrop-blur-sm rounded-xl p-3 border border-border max-w-[180px] pointer-events-auto"
           >
-            {pinnedSatellite && (
-              <button 
-                onClick={() => setPinnedSatellite(null)}
-                className="absolute -top-2 -right-2 w-5 h-5 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
-              >
-                ×
-              </button>
-            )}
+            <button 
+              onClick={() => setSelectedSatellite(null)}
+              className="absolute -top-2 -right-2 w-5 h-5 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+            >
+              ×
+            </button>
             <h4 className="font-display font-semibold text-foreground text-sm leading-tight">
-              {displayedSatellite.name}
+              {selectedSatellite.name}
             </h4>
-            <p className="text-xs text-primary mt-0.5">{displayedSatellite.operator}</p>
+            <p className="text-xs text-primary mt-0.5">{selectedSatellite.operator}</p>
             <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-              <p>ID: {displayedSatellite.noradId}</p>
-              <p>{displayedSatellite.lat.toFixed(2)}°, {displayedSatellite.lng.toFixed(2)}°</p>
+              <p>ID: {selectedSatellite.noradId}</p>
+              <p>{selectedSatellite.lat.toFixed(2)}°, {selectedSatellite.lng.toFixed(2)}°</p>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
-              <span className="impact-tag text-[10px] px-1.5 py-0.5">{displayedSatellite.type.replace('_', ' ')}</span>
-              <span className="impact-tag text-[10px] px-1.5 py-0.5">{displayedSatellite.orbitClass}</span>
+              <span className="impact-tag text-[10px] px-1.5 py-0.5">{selectedSatellite.type.replace('_', ' ')}</span>
+              <span className="impact-tag text-[10px] px-1.5 py-0.5">{selectedSatellite.orbitClass}</span>
             </div>
           </motion.div>
         )}

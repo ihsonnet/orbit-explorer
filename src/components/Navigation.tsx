@@ -28,7 +28,7 @@ const Navigation = () => {
               <Satellite className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="font-display font-bold text-lg hidden sm:block">
-              S.P.A.C.E
+              S.P.A.C.E. 4 E
             </span>
           </Link>
 

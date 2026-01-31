@@ -37,7 +37,7 @@ const Index = () => {
               <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
                 <span className="gradient-text">S.P.A.C.E.</span>
                 <br />
-                <span className="text-foreground">for Everyone</span>
+                <span className="text-foreground">4 Everyone</span>
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl leading-relaxed">
