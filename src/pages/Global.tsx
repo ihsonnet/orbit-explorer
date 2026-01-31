@@ -4,19 +4,19 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import GlobeVisualization from '@/components/GlobeVisualization';
-import SatelliteFilterPanel, { SatelliteFilters } from '@/components/SatelliteFilterPanel';
+import { SatelliteFilters } from '@/components/SatelliteFilterPanel';
 import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye } from 'lucide-react';
 import { ORBIT_COLORS } from '@/lib/orbitColors';
+
 const Global = () => {
   const [filters, setFilters] = useState<SatelliteFilters>({
     types: [],
     orbitClasses: [],
     operators: [],
   });
-  const [availableOperators, setAvailableOperators] = useState<string[]>([]);
 
-  const handleOperatorsLoaded = useCallback((operators: string[]) => {
-    setAvailableOperators(operators);
+  const handleFiltersChange = useCallback((newFilters: SatelliteFilters) => {
+    setFilters(newFilters);
   }, []);
 
   const stats = [
@@ -76,14 +76,7 @@ const Global = () => {
             ))}
           </motion.div>
 
-          {/* Filter Panel */}
-          <SatelliteFilterPanel 
-            filters={filters} 
-            onFiltersChange={setFilters}
-            availableOperators={availableOperators}
-          />
-
-          {/* Globe */}
+          {/* Globe with integrated filters */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -92,7 +85,7 @@ const Global = () => {
           >
             <GlobeVisualization 
               filters={filters}
-              onOperatorsLoaded={handleOperatorsLoaded}
+              onFiltersChange={handleFiltersChange}
             />
           </motion.div>
 
