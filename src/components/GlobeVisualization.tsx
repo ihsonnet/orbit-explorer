@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { motion } from 'framer-motion';
-import { useSatellitePositions } from '@/hooks/useTLEData';
+import { useTLEData, useSatellitePositions } from '@/hooks/useTLEData';
 import { SatelliteFilters } from './SatelliteFilterPanel';
+import { Progress } from './ui/progress';
 
 interface SatellitePoint {
   lat: number;
@@ -32,6 +33,7 @@ interface GlobeVisualizationProps {
 
 const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationProps) => {
   const globeRef = useRef<any>();
+  const { isLoading, loadProgress, satelliteCount } = useTLEData();
   const satellites = useSatellitePositions(30000);
   const [allPoints, setAllPoints] = useState<SatellitePoint[]>([]);
   const [selectedSatellite, setSelectedSatellite] = useState<SatellitePoint | null>(null);
@@ -66,30 +68,39 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
     }
   }, [satellites, onOperatorsLoaded]);
 
-  // Apply filters to points - limit LEO/Starlink on initial load for performance
+  // Apply filters to points - limit each satellite type to 300 on initial load for performance
   const filteredPoints = useMemo(() => {
     const hasTypeFilter = filters?.types.length > 0;
     const hasOrbitFilter = filters?.orbitClasses.length > 0;
     const hasOperatorFilter = filters?.operators.length > 0;
     const hasAnyFilter = hasTypeFilter || hasOrbitFilter || hasOperatorFilter;
 
-    // When no filters applied, limit LEO satellites (especially Starlink) for smooth initial experience
+    // When no filters applied, limit each satellite type to 300 for smooth initial experience
     if (!hasAnyFilter) {
-      const nonLeoSatellites = allPoints.filter(p => p.orbitClass !== 'LEO');
-      const leoSatellites = allPoints.filter(p => p.orbitClass === 'LEO');
+      const MAX_PER_TYPE = 300;
+      const sampledPoints: SatellitePoint[] = [];
+      const typeGroups: Record<string, SatellitePoint[]> = {};
       
-      // Sample LEO satellites: keep all non-Starlink LEO, limit Starlink to ~200
-      const starlinkSatellites = leoSatellites.filter(p => 
-        p.operator.toLowerCase().includes('spacex') || p.name.toLowerCase().includes('starlink')
-      );
-      const otherLeoSatellites = leoSatellites.filter(p => 
-        !p.operator.toLowerCase().includes('spacex') && !p.name.toLowerCase().includes('starlink')
-      );
+      // Group satellites by type
+      allPoints.forEach(point => {
+        if (!typeGroups[point.type]) {
+          typeGroups[point.type] = [];
+        }
+        typeGroups[point.type].push(point);
+      });
       
-      // Take every Nth Starlink for visual representation
-      const sampledStarlink = starlinkSatellites.filter((_, i) => i % Math.ceil(starlinkSatellites.length / 200) === 0);
+      // Sample each type to max 300
+      Object.values(typeGroups).forEach(group => {
+        if (group.length <= MAX_PER_TYPE) {
+          sampledPoints.push(...group);
+        } else {
+          const step = Math.ceil(group.length / MAX_PER_TYPE);
+          const sampled = group.filter((_, i) => i % step === 0);
+          sampledPoints.push(...sampled);
+        }
+      });
       
-      return [...nonLeoSatellites, ...otherLeoSatellites, ...sampledStarlink];
+      return sampledPoints;
     }
 
     // When filters are active, show ALL matching satellites
@@ -129,11 +140,17 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
     <div ref={containerRef} className="relative w-full h-[600px] rounded-2xl overflow-hidden">
       <div className="absolute inset-0 pointer-events-none z-10 bg-gradient-to-b from-transparent via-transparent to-background" />
       
-      {allPoints.length === 0 && (
+      {(isLoading || allPoints.length === 0) && (
         <div className="absolute inset-0 flex items-center justify-center z-20">
-          <div className="text-center">
+          <div className="text-center max-w-xs w-full px-4">
             <div className="w-12 h-12 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="text-muted-foreground">Loading satellite positions...</p>
+            <p className="text-muted-foreground mb-3">
+              {loadProgress.phase || 'Loading satellite positions...'}
+            </p>
+            <Progress value={loadProgress.loaded} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              {satelliteCount > 0 ? `${satelliteCount.toLocaleString()} satellites` : `${loadProgress.loaded}%`}
+            </p>
           </div>
         </div>
       )}
