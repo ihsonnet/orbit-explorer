@@ -235,6 +235,18 @@ const SkyAboveMe = () => {
             </div>
           </motion.div>
 
+          {/* GPS Locating Animation - Above Results */}
+          <AnimatePresence>
+            {isLocatingGPS && (
+              <div ref={animationRef}>
+                <GPSLocatingAnimation 
+                  onComplete={handleGPSAnimationComplete}
+                  duration={5000}
+                />
+              </div>
+            )}
+          </AnimatePresence>
+
           {/* Results */}
           {location && (
             <motion.div
@@ -321,18 +333,6 @@ const SkyAboveMe = () => {
               </p>
             </motion.div>
           )}
-
-          {/* GPS Locating Animation */}
-          <AnimatePresence>
-            {isLocatingGPS && (
-              <div ref={animationRef}>
-                <GPSLocatingAnimation 
-                  onComplete={handleGPSAnimationComplete}
-                  duration={5000}
-                />
-              </div>
-            )}
-          </AnimatePresence>
 
           {isLoading && !isLocatingGPS && (
             <motion.div
