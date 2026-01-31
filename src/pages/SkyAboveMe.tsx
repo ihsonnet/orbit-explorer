@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Locate, Search, RefreshCw, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import SatelliteCard from '@/components/SatelliteCard';
+import GPSLocatingAnimation from '@/components/GPSLocatingAnimation';
 import { useTLEData } from '@/hooks/useTLEData';
 import { SatelliteInfo } from '@/lib/satellites';
 
@@ -23,25 +24,44 @@ const SkyAboveMe = () => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [cityInput, setCityInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocatingGPS, setIsLocatingGPS] = useState(false);
   const [satellites, setSatellites] = useState<VisibleSatellite[]>([]);
   const [locationName, setLocationName] = useState('');
+  
+  // Store pending location data during animation
+  const pendingLocationRef = useRef<{
+    lat: number;
+    lng: number;
+    name: string;
+    satellites: VisibleSatellite[];
+  } | null>(null);
+
+  const handleGPSAnimationComplete = useCallback(() => {
+    if (pendingLocationRef.current) {
+      setLocation({ lat: pendingLocationRef.current.lat, lng: pendingLocationRef.current.lng });
+      setLocationName(pendingLocationRef.current.name);
+      setSatellites(pendingLocationRef.current.satellites);
+      pendingLocationRef.current = null;
+    }
+    setIsLocatingGPS(false);
+  }, []);
 
   const handleGeolocation = () => {
-    setIsLoading(true);
+    setIsLocatingGPS(true);
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          setLocation({ lat: latitude, lng: longitude });
           
+          let name = 'Your Location';
           try {
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
             );
             const data = await response.json();
-            setLocationName(data.display_name?.split(',').slice(0, 2).join(',') || 'Your Location');
+            name = data.display_name?.split(',').slice(0, 2).join(',') || 'Your Location';
           } catch {
-            setLocationName('Your Location');
+            // Keep default name
           }
 
           const visibleSats = getSatellitesAbove(latitude, longitude, 5);
@@ -59,11 +79,17 @@ const SkyAboveMe = () => {
             lng: sat.lng,
             alt: sat.alt,
           }));
-          setSatellites(mappedSats.slice(0, 50));
-          setIsLoading(false);
+          
+          // Store data to show after animation completes
+          pendingLocationRef.current = {
+            lat: latitude,
+            lng: longitude,
+            name,
+            satellites: mappedSats.slice(0, 50),
+          };
         },
         () => {
-          setIsLoading(false);
+          setIsLocatingGPS(false);
           alert('Unable to get your location. Please enter a city name.');
         }
       );
@@ -186,13 +212,13 @@ const SkyAboveMe = () => {
                   onKeyDown={(e) => e.key === 'Enter' && handleCitySearch()}
                   className="bg-secondary/50 border-border"
                 />
-                <Button onClick={handleCitySearch} disabled={isLoading || isTLELoading}>
+                <Button onClick={handleCitySearch} disabled={isLoading || isTLELoading || isLocatingGPS}>
                   <Search className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-sm">or</span>
-                <Button variant="cosmic" onClick={handleGeolocation} disabled={isLoading || isTLELoading}>
+                <Button variant="cosmic" onClick={handleGeolocation} disabled={isLoading || isTLELoading || isLocatingGPS}>
                   <Locate className="w-4 h-4 mr-2" />
                   Use My Location
                 </Button>
@@ -272,7 +298,7 @@ const SkyAboveMe = () => {
             </motion.div>
           )}
 
-          {!location && !isLoading && (
+          {!location && !isLoading && !isLocatingGPS && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -287,7 +313,17 @@ const SkyAboveMe = () => {
             </motion.div>
           )}
 
-          {isLoading && (
+          {/* GPS Locating Animation */}
+          <AnimatePresence>
+            {isLocatingGPS && (
+              <GPSLocatingAnimation 
+                onComplete={handleGPSAnimationComplete}
+                duration={30000}
+              />
+            )}
+          </AnimatePresence>
+
+          {isLoading && !isLocatingGPS && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
