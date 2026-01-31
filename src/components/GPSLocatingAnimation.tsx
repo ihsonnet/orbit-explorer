@@ -111,70 +111,109 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
             className="fill-primary/10"
           />
 
-          {/* Distance circles from satellites */}
-          {SATELLITES.map((sat) => {
-            const isActive = activeSatellites.includes(sat.id);
-            const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
-            const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
-            const distance = orbitRadius;
-            
-            if (!isActive) return null;
-            
-            return (
-              <g key={`circle-${sat.id}`}>
-                {/* Static distance circle */}
-                <motion.circle
-                  cx={satX}
-                  cy={satY}
-                  fill="none"
-                  className="stroke-muted-foreground/40"
-                  strokeWidth="0.4"
-                  strokeDasharray="1.5 1"
-                  initial={{ r: 0, opacity: 0 }}
-                  animate={{ r: distance, opacity: 1 }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                />
-                
-                {/* Expanding pulse */}
-                <motion.circle
-                  cx={satX}
-                  cy={satY}
-                  fill="none"
-                  className="stroke-primary/50"
-                  strokeWidth="0.3"
-                  initial={{ r: 5 }}
-                  animate={{ r: distance + 5, opacity: [0.6, 0] }}
-                  transition={{ 
-                    duration: 2.5, 
-                    repeat: Infinity,
-                    ease: 'easeOut'
-                  }}
-                />
-              </g>
-            );
-          })}
+          {/* Satellites orbiting with their distance circles */}
+          <motion.g
+            animate={{ rotate: 360 }}
+            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+            style={{ transformOrigin: '50px 50px' }}
+          >
+            {SATELLITES.map((sat) => {
+              const isActive = activeSatellites.includes(sat.id);
+              const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
+              const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
+              const distance = orbitRadius;
+              
+              return (
+                <g key={`sat-${sat.id}`}>
+                  {/* Distance circle - moves with satellite */}
+                  {isActive && (
+                    <>
+                      <motion.circle
+                        cx={satX}
+                        cy={satY}
+                        fill="none"
+                        className="stroke-muted-foreground/30"
+                        strokeWidth="0.3"
+                        strokeDasharray="1.5 1"
+                        initial={{ r: 0, opacity: 0 }}
+                        animate={{ r: distance, opacity: 0.6 }}
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                      />
+                      
+                      {/* Subtle pulse on circle */}
+                      <motion.circle
+                        cx={satX}
+                        cy={satY}
+                        fill="none"
+                        className="stroke-primary/30"
+                        strokeWidth="0.2"
+                        initial={{ r: distance - 2 }}
+                        animate={{ r: distance + 3, opacity: [0.4, 0] }}
+                        transition={{ 
+                          duration: 3, 
+                          repeat: Infinity,
+                          ease: 'easeOut'
+                        }}
+                      />
+                    </>
+                  )}
 
-          {/* Connection lines to center when location found */}
-          {showLocation && SATELLITES.map((sat) => {
-            const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
-            const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
-            
-            return (
-              <motion.line
-                key={`line-${sat.id}`}
-                x1={satX}
-                y1={satY}
-                x2="50"
-                y2="50"
-                className="stroke-primary/30"
-                strokeWidth="0.4"
-                strokeDasharray="1 1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              />
-            );
-          })}
+                  {/* Connection line to Earth center when location found */}
+                  {showLocation && isActive && (
+                    <motion.line
+                      x1={satX}
+                      y1={satY}
+                      x2="50"
+                      y2="50"
+                      className="stroke-primary/40"
+                      strokeWidth="0.3"
+                      strokeDasharray="1 1"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  )}
+
+                  {/* Satellite glow */}
+                  {isActive && (
+                    <motion.circle
+                      cx={satX}
+                      cy={satY}
+                      r="3"
+                      className="fill-primary/15"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0.2, 0.5, 0.2] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                  )}
+                  
+                  {/* Satellite dot */}
+                  <circle
+                    cx={satX}
+                    cy={satY}
+                    r="1.5"
+                    className={isActive ? 'fill-primary' : 'fill-muted-foreground/40'}
+                  />
+                  
+                  {/* Label - counter-rotate to keep text readable */}
+                  <motion.g
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+                    style={{ transformOrigin: `${satX}px ${satY}px` }}
+                  >
+                    <text
+                      x={satX}
+                      y={satY - 4}
+                      textAnchor="middle"
+                      className={`text-[2.5px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/40'}`}
+                    >
+                      {sat.name}
+                    </text>
+                  </motion.g>
+                </g>
+              );
+            })}
+          </motion.g>
 
           {/* Location point on Earth */}
           <AnimatePresence>
@@ -206,53 +245,6 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
             )}
           </AnimatePresence>
 
-          {/* Satellites orbiting slowly */}
-          <motion.g
-            animate={{ rotate: 360 }}
-            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-            style={{ transformOrigin: '50px 50px' }}
-          >
-            {SATELLITES.map((sat) => {
-              const isActive = activeSatellites.includes(sat.id);
-              const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
-              const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
-              
-              return (
-                <g key={`sat-${sat.id}`}>
-                  {/* Satellite glow */}
-                  {isActive && (
-                    <motion.circle
-                      cx={satX}
-                      cy={satY}
-                      r="4"
-                      className="fill-primary/20"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-                  
-                  {/* Satellite dot */}
-                  <circle
-                    cx={satX}
-                    cy={satY}
-                    r="2"
-                    className={isActive ? 'fill-primary' : 'fill-muted-foreground/50'}
-                  />
-                  
-                  {/* Label */}
-                  <text
-                    x={satX}
-                    y={satY - 5}
-                    textAnchor="middle"
-                    className={`text-[3px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/50'}`}
-                  >
-                    {sat.name}
-                  </text>
-                </g>
-              );
-            })}
-          </motion.g>
         </svg>
       </div>
 
