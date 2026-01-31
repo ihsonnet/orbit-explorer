@@ -12,7 +12,7 @@ const Footer = () => {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <Satellite className="w-5 h-5 text-white" />
               </div>
-              <span className="font-display font-bold text-lg">S.P.A.C.E. 4 Everyone</span>
+              <span className="font-display font-bold text-lg">S.P.A.C.E. for Everyone</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-md">
               Making space accessible to all. Discover how satellites silently power your everyday life, 
@@ -88,7 +88,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground text-center md:text-left">
-            © {new Date().getFullYear()} S.P.A.C.E. 4 Everyone. 
+            © {new Date().getFullYear()} S.P.A.C.E. for Everyone. 
             Real-time TLE data from Celestrak. Educational use only.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
