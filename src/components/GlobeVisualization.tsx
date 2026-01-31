@@ -270,8 +270,8 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
           `;
           el.style.cursor = 'pointer';
           el.style.pointerEvents = 'auto';
-          el.title = `${d.name}\n${d.operator}\n${d.type.replace('_', ' ')} • ${d.orbitClass}`;
-          el.onclick = () => setSelectedSatellite(d);
+          el.onmouseenter = () => setSelectedSatellite(d);
+          el.onmouseleave = () => setSelectedSatellite(null);
           return el;
         }}
       />
@@ -286,9 +286,8 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
         <div className="bg-card/90 backdrop-blur-sm rounded-xl px-4 py-3 border border-border">
           <div className="text-2xl font-display font-bold text-primary">{filteredPoints.length.toLocaleString()}</div>
           <div className="text-xs text-muted-foreground">
-            {hasActiveFilters 
-              ? `of ${allPoints.length.toLocaleString()} satellites` 
-              : `Showing (max 300/type)`}
+            of {allPoints.length.toLocaleString()} satellites
+            {!hasActiveFilters && <span className="text-primary/70"> (sampled)</span>}
           </div>
           {hasActiveFilters && (
             <button 
@@ -302,7 +301,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
 
         {/* Orbit Class Filters */}
         <div className="bg-card/90 backdrop-blur-sm rounded-xl p-3 border border-border">
-          <p className="text-xs text-muted-foreground mb-2 font-medium">Orbit Class</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">Filter by Orbit</p>
           <div className="flex flex-wrap gap-1.5">
             {ORBIT_CLASSES.map((orbit) => {
               const isActive = filters.orbitClasses.includes(orbit.id);
@@ -312,13 +311,14 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                   key={orbit.id}
                   onClick={() => toggleOrbitClass(orbit.id)}
                   className={`
-                    flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all
+                    flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer
                     ${isActive 
-                      ? `${colors.bg} ${colors.border} ${colors.tailwind}` 
-                      : 'bg-secondary/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      ? `${colors.bg} ${colors.border} ${colors.tailwind} shadow-sm` 
+                      : `bg-secondary/30 border-transparent ${colors.tailwind} opacity-60 hover:opacity-100 hover:bg-secondary/50`
                     }
                     border
                   `}
+                  style={{ borderLeftColor: colors.hex, borderLeftWidth: '3px' }}
                 >
                   {orbit.label}
                   {isActive && <Check className="w-3 h-3" />}
@@ -333,10 +333,10 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="absolute bottom-6 left-4 z-20 bg-card/90 backdrop-blur-sm rounded-xl p-4 border border-border"
+        className="absolute bottom-6 left-4 z-20 bg-card/90 backdrop-blur-sm rounded-xl p-3 border border-border"
       >
-        <h4 className="font-display text-sm font-semibold mb-3 text-foreground">Satellite Types</h4>
-        <div className="space-y-1.5">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">Filter by Type</p>
+        <div className="space-y-1">
           {SATELLITE_TYPES.map((type) => {
             const isActive = filters.types.includes(type.id);
             const color = typeColors[type.id];
@@ -345,19 +345,26 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                 key={type.id}
                 onClick={() => toggleType(type.id)}
                 className={`
-                  flex items-center gap-2 w-full text-left px-2 py-1 rounded-lg text-xs transition-all
+                  flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer group
                   ${isActive 
-                    ? 'bg-primary/20 text-foreground' 
-                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                    ? 'text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
                   }
                 `}
+                style={{ 
+                  backgroundColor: isActive ? `${color}20` : 'transparent',
+                  borderLeft: `3px solid ${color}`,
+                }}
               >
                 <div 
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: color }}
+                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}
+                  style={{ 
+                    backgroundColor: color,
+                    boxShadow: isActive ? `0 0 8px ${color}` : 'none'
+                  }}
                 />
                 <span className="flex-1">{type.label}</span>
-                {isActive && <Check className="w-3 h-3 text-primary" />}
+                {isActive && <Check className="w-3 h-3" style={{ color }} />}
               </button>
             );
           })}
@@ -371,8 +378,8 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
         className="absolute top-4 right-4 bottom-6 z-20 w-36"
       >
         <div className="bg-card/90 backdrop-blur-sm rounded-xl p-3 border border-border h-full overflow-hidden flex flex-col">
-          <p className="text-xs text-muted-foreground mb-2 font-medium">Operators</p>
-          <div className="flex-1 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">Filter by Operator</p>
+          <div className="flex-1 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin">
             {displayOperators.map((operator) => {
               const isActive = filters.operators.includes(operator);
               return (
@@ -380,10 +387,10 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                   key={operator}
                   onClick={() => toggleOperator(operator)}
                   className={`
-                    flex items-center gap-1 w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all
+                    flex items-center gap-1 w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer
                     ${isActive 
-                      ? 'bg-primary/20 text-foreground' 
-                      : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                      ? 'bg-primary/20 text-primary border-l-2 border-primary' 
+                      : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground border-l-2 border-transparent'
                     }
                   `}
                 >
