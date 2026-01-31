@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTLEData, useSatellitePositions } from '@/hooks/useTLEData';
@@ -132,30 +132,47 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     }
   }, [satellites, onOperatorsLoaded]);
 
-  // Apply filters - NO sampling needed with WebGL rendering!
+  // Apply filters with sampling for HTML elements performance
   const filteredPoints = useMemo(() => {
     const hasTypeFilter = filters?.types.length > 0;
     const hasOrbitFilter = filters?.orbitClasses.length > 0;
     const hasOperatorFilter = filters?.operators.length > 0;
     const hasAnyFilter = hasTypeFilter || hasOrbitFilter || hasOperatorFilter;
 
+    // When no filters, sample for smooth performance with HTML elements
     if (!hasAnyFilter) {
-      return allPoints; // No more sampling needed - WebGL handles all points efficiently
+      const MAX_PER_TYPE = 800;
+      const sampledPoints: SatellitePoint[] = [];
+      const typeGroups: Record<string, SatellitePoint[]> = {};
+      
+      allPoints.forEach(point => {
+        if (!typeGroups[point.type]) typeGroups[point.type] = [];
+        typeGroups[point.type].push(point);
+      });
+      
+      Object.values(typeGroups).forEach(group => {
+        if (group.length <= MAX_PER_TYPE) {
+          sampledPoints.push(...group);
+        } else {
+          const step = Math.ceil(group.length / MAX_PER_TYPE);
+          sampledPoints.push(...group.filter((_, i) => i % step === 0));
+        }
+      });
+      
+      return sampledPoints;
     }
 
-    return allPoints.filter(point => {
+    // When filters active, show all matching (up to reasonable limit)
+    const filtered = allPoints.filter(point => {
       const matchesType = !hasTypeFilter || filters.types.includes(point.type);
       const matchesOrbit = !hasOrbitFilter || filters.orbitClasses.includes(point.orbitClass);
       const matchesOperator = !hasOperatorFilter || filters.operators.includes(point.operator);
-      
       return matchesType && matchesOrbit && matchesOperator;
     });
+    
+    // Cap at 5000 for filtered results to maintain smoothness
+    return filtered.length > 5000 ? filtered.slice(0, 5000) : filtered;
   }, [allPoints, filters]);
-
-  // Handle point click
-  const handlePointClick = useCallback((point: any) => {
-    setSelectedSatellite(prev => prev?.noradId === point.noradId ? null : point);
-  }, []);
 
   // Update satellite screen position when selected
   useEffect(() => {
@@ -243,16 +260,18 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
         bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         atmosphereColor="#00d4ff"
         atmosphereAltitude={0.15}
-        // WebGL-based points rendering - handles 14,000+ points smoothly
-        pointsData={filteredPoints}
-        pointLat="lat"
-        pointLng="lng"
-        pointAltitude="alt"
-        pointColor="color"
-        pointRadius="size"
-        pointResolution={6} // Lower = faster, 6 is good balance
-        pointsMerge={true} // Merge all points into single geometry for max performance
-        onPointClick={handlePointClick}
+        // HTML elements for satellite icons with glow effect
+        htmlElementsData={filteredPoints}
+        htmlLat="lat"
+        htmlLng="lng"
+        htmlAltitude="alt"
+        htmlElement={(d: any) => {
+          const el = document.createElement('div');
+          el.style.cssText = 'cursor:pointer;pointer-events:auto;will-change:transform;';
+          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${d.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 3px ${d.color})"><path d="M13 7 9 3 5 7l4 4"/><path d="m17 11 4 4-4 4-4-4"/><path d="m8 12 4 4 6-6-4-4Z"/><path d="m16 8 3-3"/><path d="M9 21a6 6 0 0 0-6-6"/></svg>`;
+          el.onclick = () => setSelectedSatellite(prev => prev?.noradId === d.noradId ? null : d);
+          return el;
+        }}
       />
 
       {/* Top Left: Stats + Orbit Class Filters */}
@@ -265,7 +284,10 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
         <div className="bg-card/90 backdrop-blur-sm rounded-xl px-4 py-3 border border-border">
           <div className="text-2xl font-display font-bold text-primary">{filteredPoints.length.toLocaleString()}</div>
           <div className="text-xs text-muted-foreground">
-            {hasActiveFilters ? `of ${allPoints.length.toLocaleString()} satellites` : 'satellites loaded'}
+            of {allPoints.length.toLocaleString()} satellites
+            {!hasActiveFilters && filteredPoints.length < allPoints.length && (
+              <span className="text-primary/70"> (sampled)</span>
+            )}
           </div>
           {hasActiveFilters && (
             <button 
