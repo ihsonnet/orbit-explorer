@@ -82,8 +82,8 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
       exit={{ opacity: 0 }}
       className="py-10 flex flex-col items-center"
     >
-      {/* Main Visualization */}
-      <div className="relative w-72 h-72 mb-8">
+      {/* Main Visualization - Responsive sizing */}
+      <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] mb-8">
         <svg 
           className="w-full h-full" 
           viewBox="0 0 100 100"
