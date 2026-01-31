@@ -210,33 +210,6 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
             })}
           </motion.g>
 
-          {/* Connection lines - drawn separately so they connect moving sats to fixed center */}
-          {showLocation && SATELLITES.map((sat) => {
-            const isActive = activeSatellites.includes(sat.id);
-            if (!isActive) return null;
-            const pos = getSatellitePosition(sat.angle);
-            
-            return (
-              <motion.g
-                key={`line-${sat.id}`}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-                style={{ transformOrigin: '50px 50px' }}
-              >
-                <motion.line
-                  x1={pos.x}
-                  y1={pos.y}
-                  x2="50"
-                  y2="50"
-                  className="stroke-primary/50"
-                  strokeWidth="0.4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </motion.g>
-            );
-          })}
 
           {/* Location point on Earth */}
           <AnimatePresence>

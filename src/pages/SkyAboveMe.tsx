@@ -62,15 +62,19 @@ const SkyAboveMe = () => {
         async (position) => {
           const { latitude, longitude } = position.coords;
           
-          let name = 'Your Location';
+          // Fetch location name first
+          let name = `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
           try {
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+              { headers: { 'Accept-Language': 'en' } }
             );
             const data = await response.json();
-            name = data.display_name?.split(',').slice(0, 2).join(',') || 'Your Location';
+            if (data.display_name) {
+              name = data.display_name.split(',').slice(0, 2).join(',').trim();
+            }
           } catch {
-            // Keep default name
+            // Keep coordinates as fallback
           }
 
           const visibleSats = getSatellitesAbove(latitude, longitude, 5);
