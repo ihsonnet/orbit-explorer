@@ -63,8 +63,17 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
     return () => clearInterval(interval);
   }, [duration, onComplete, activeSatellites]);
 
-  const orbitRadius = 42;
-  const earthRadius = 12;
+  const orbitRadius = 38;
+  const earthRadius = 10;
+
+  // Calculate fixed satellite positions
+  const getSatellitePosition = (angle: number) => {
+    const rad = (angle - 90) * (Math.PI / 180); // Start from top
+    return {
+      x: 50 + orbitRadius * Math.cos(rad),
+      y: 50 + orbitRadius * Math.sin(rad),
+    };
+  };
 
   return (
     <motion.div
@@ -78,7 +87,6 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
         <svg 
           className="w-full h-full" 
           viewBox="0 0 100 100"
-          style={{ overflow: 'visible' }}
         >
           {/* Orbit path */}
           <circle
@@ -100,10 +108,10 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
             className="fill-primary/20"
             stroke="currentColor"
             strokeWidth="0.5"
-            style={{ filter: 'drop-shadow(0 0 8px hsl(var(--primary) / 0.3))' }}
+            style={{ filter: 'drop-shadow(0 0 6px hsl(var(--primary) / 0.3))' }}
           />
           
-          {/* Earth inner glow */}
+          {/* Earth surface detail */}
           <circle
             cx="50"
             cy="50"
@@ -111,109 +119,157 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
             className="fill-primary/10"
           />
 
-          {/* Satellites orbiting with their distance circles */}
-          <motion.g
-            animate={{ rotate: 360 }}
-            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-            style={{ transformOrigin: '50px 50px' }}
-          >
-            {SATELLITES.map((sat) => {
-              const isActive = activeSatellites.includes(sat.id);
-              const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
-              const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
-              const distance = orbitRadius;
-              
-              return (
-                <g key={`sat-${sat.id}`}>
-                  {/* Distance circle - moves with satellite */}
-                  {isActive && (
-                    <>
-                      <motion.circle
-                        cx={satX}
-                        cy={satY}
-                        fill="none"
-                        className="stroke-muted-foreground/30"
-                        strokeWidth="0.3"
-                        strokeDasharray="1.5 1"
-                        initial={{ r: 0, opacity: 0 }}
-                        animate={{ r: distance, opacity: 0.6 }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                      />
-                      
-                      {/* Subtle pulse on circle */}
-                      <motion.circle
-                        cx={satX}
-                        cy={satY}
-                        fill="none"
-                        className="stroke-primary/30"
-                        strokeWidth="0.2"
-                        initial={{ r: distance - 2 }}
-                        animate={{ r: distance + 3, opacity: [0.4, 0] }}
-                        transition={{ 
-                          duration: 3, 
-                          repeat: Infinity,
-                          ease: 'easeOut'
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {/* Connection line to Earth center when location found */}
-                  {showLocation && isActive && (
-                    <motion.line
-                      x1={satX}
-                      y1={satY}
-                      x2="50"
-                      y2="50"
-                      className="stroke-primary/40"
-                      strokeWidth="0.3"
-                      strokeDasharray="1 1"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  )}
-
-                  {/* Satellite glow */}
-                  {isActive && (
-                    <motion.circle
-                      cx={satX}
-                      cy={satY}
-                      r="3"
-                      className="fill-primary/15"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0.2, 0.5, 0.2] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-                  
-                  {/* Satellite dot */}
-                  <circle
-                    cx={satX}
-                    cy={satY}
-                    r="1.5"
-                    className={isActive ? 'fill-primary' : 'fill-muted-foreground/40'}
+          {/* Satellites at fixed positions */}
+          {SATELLITES.map((sat) => {
+            const isActive = activeSatellites.includes(sat.id);
+            const pos = getSatellitePosition(sat.angle);
+            const distanceToCenter = orbitRadius;
+            
+            return (
+              <g key={`sat-${sat.id}`}>
+                {/* Trilateration circle - expands from satellite toward center */}
+                {isActive && (
+                  <motion.circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    fill="none"
+                    className="stroke-primary/40"
+                    strokeWidth="0.4"
+                    strokeDasharray="2 1.5"
+                    initial={{ r: 0, opacity: 0 }}
+                    animate={{ r: distanceToCenter, opacity: 0.5 }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
                   />
-                  
-                  {/* Label - counter-rotate to keep text readable */}
-                  <motion.g
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-                    style={{ transformOrigin: `${satX}px ${satY}px` }}
-                  >
-                    <text
-                      x={satX}
-                      y={satY - 4}
-                      textAnchor="middle"
-                      className={`text-[2.5px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/40'}`}
-                    >
-                      {sat.name}
-                    </text>
-                  </motion.g>
-                </g>
-              );
-            })}
-          </motion.g>
+                )}
+
+                {/* Communication signal pulses - traveling from satellite to earth */}
+                {isActive && (
+                  <>
+                    <motion.circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r="1"
+                      className="fill-primary"
+                      initial={{ 
+                        cx: pos.x, 
+                        cy: pos.y, 
+                        opacity: 0.8,
+                        scale: 1
+                      }}
+                      animate={{ 
+                        cx: 50, 
+                        cy: 50, 
+                        opacity: 0,
+                        scale: 0.3
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        ease: 'linear',
+                        delay: 0
+                      }}
+                    />
+                    <motion.circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r="1"
+                      className="fill-primary"
+                      initial={{ 
+                        cx: pos.x, 
+                        cy: pos.y, 
+                        opacity: 0.8,
+                        scale: 1
+                      }}
+                      animate={{ 
+                        cx: 50, 
+                        cy: 50, 
+                        opacity: 0,
+                        scale: 0.3
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        ease: 'linear',
+                        delay: 0.5
+                      }}
+                    />
+                    <motion.circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r="1"
+                      className="fill-primary"
+                      initial={{ 
+                        cx: pos.x, 
+                        cy: pos.y, 
+                        opacity: 0.8,
+                        scale: 1
+                      }}
+                      animate={{ 
+                        cx: 50, 
+                        cy: 50, 
+                        opacity: 0,
+                        scale: 0.3
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        ease: 'linear',
+                        delay: 1
+                      }}
+                    />
+                  </>
+                )}
+
+                {/* Connection line when location found */}
+                {showLocation && isActive && (
+                  <motion.line
+                    x1={pos.x}
+                    y1={pos.y}
+                    x2="50"
+                    y2="50"
+                    className="stroke-primary/50"
+                    strokeWidth="0.4"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                  />
+                )}
+
+                {/* Satellite glow */}
+                {isActive && (
+                  <motion.circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r="3"
+                    className="fill-primary/20"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                )}
+                
+                {/* Satellite dot */}
+                <motion.circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r="1.8"
+                  className={isActive ? 'fill-primary' : 'fill-muted-foreground/40'}
+                  animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                
+                {/* Label */}
+                <text
+                  x={pos.x}
+                  y={pos.y - 5}
+                  textAnchor="middle"
+                  className={`text-[2.5px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/40'}`}
+                >
+                  {sat.name}
+                </text>
+              </g>
+            );
+          })}
 
           {/* Location point on Earth */}
           <AnimatePresence>
@@ -227,15 +283,15 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
                   className="stroke-destructive"
                   strokeWidth="0.5"
                   initial={{ r: 0, opacity: 1 }}
-                  animate={{ r: 6, opacity: 0 }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
+                  animate={{ r: 5, opacity: 0 }}
+                  transition={{ duration: 1, repeat: Infinity }}
                 />
                 
                 {/* Location dot */}
                 <motion.circle
                   cx="50"
                   cy="50"
-                  r="2"
+                  r="1.5"
                   className="fill-destructive"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
