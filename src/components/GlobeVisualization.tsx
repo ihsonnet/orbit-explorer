@@ -66,18 +66,33 @@ const GlobeVisualization = ({ filters, onOperatorsLoaded }: GlobeVisualizationPr
     }
   }, [satellites, onOperatorsLoaded]);
 
-  // Apply filters to points
+  // Apply filters to points - limit LEO/Starlink on initial load for performance
   const filteredPoints = useMemo(() => {
-    if (!filters) return allPoints;
+    const hasTypeFilter = filters?.types.length > 0;
+    const hasOrbitFilter = filters?.orbitClasses.length > 0;
+    const hasOperatorFilter = filters?.operators.length > 0;
+    const hasAnyFilter = hasTypeFilter || hasOrbitFilter || hasOperatorFilter;
 
-    const hasTypeFilter = filters.types.length > 0;
-    const hasOrbitFilter = filters.orbitClasses.length > 0;
-    const hasOperatorFilter = filters.operators.length > 0;
-
-    if (!hasTypeFilter && !hasOrbitFilter && !hasOperatorFilter) {
-      return allPoints;
+    // When no filters applied, limit LEO satellites (especially Starlink) for smooth initial experience
+    if (!hasAnyFilter) {
+      const nonLeoSatellites = allPoints.filter(p => p.orbitClass !== 'LEO');
+      const leoSatellites = allPoints.filter(p => p.orbitClass === 'LEO');
+      
+      // Sample LEO satellites: keep all non-Starlink LEO, limit Starlink to ~200
+      const starlinkSatellites = leoSatellites.filter(p => 
+        p.operator.toLowerCase().includes('spacex') || p.name.toLowerCase().includes('starlink')
+      );
+      const otherLeoSatellites = leoSatellites.filter(p => 
+        !p.operator.toLowerCase().includes('spacex') && !p.name.toLowerCase().includes('starlink')
+      );
+      
+      // Take every Nth Starlink for visual representation
+      const sampledStarlink = starlinkSatellites.filter((_, i) => i % Math.ceil(starlinkSatellites.length / 200) === 0);
+      
+      return [...nonLeoSatellites, ...otherLeoSatellites, ...sampledStarlink];
     }
 
+    // When filters are active, show ALL matching satellites
     return allPoints.filter(point => {
       const matchesType = !hasTypeFilter || filters.types.includes(point.type);
       const matchesOrbit = !hasOrbitFilter || filters.orbitClasses.includes(point.orbitClass);
