@@ -1,277 +1,324 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Satellite, MapPin } from 'lucide-react';
+import { Satellite } from 'lucide-react';
 import { ORBIT_COLORS } from '@/lib/orbitColors';
 
 interface GPSLocatingAnimationProps {
   onComplete: () => void;
-  duration?: number; // in milliseconds
+  duration?: number;
 }
 
 const SATELLITES = [
-  { id: 1, name: 'GPS-IIF-12', delay: 0 },
-  { id: 2, name: 'GALILEO-23', delay: 0.5 },
-  { id: 3, name: 'GLONASS-K1', delay: 1 },
-  { id: 4, name: 'GPS-III-06', delay: 1.5 },
+  { id: 1, name: 'GPS-IIF', x: 15, y: 20, delay: 0 },
+  { id: 2, name: 'GALILEO', x: 85, y: 25, delay: 0.8 },
+  { id: 3, name: 'GLONASS', x: 20, y: 80, delay: 1.6 },
+  { id: 4, name: 'GPS-III', x: 80, y: 75, delay: 2.4 },
 ];
 
-const STATUS_MESSAGES = [
-  { time: 0, message: 'Contacting GNSS satellites...' },
-  { time: 3, message: 'Acquiring satellite signals...' },
-  { time: 6, message: 'GPS-IIF-12 signal acquired ✓' },
-  { time: 9, message: 'GALILEO-23 signal acquired ✓' },
-  { time: 12, message: 'GLONASS-K1 signal acquired ✓' },
-  { time: 15, message: 'Computing triangulation...' },
-  { time: 18, message: 'GPS-III-06 signal acquired ✓' },
-  { time: 21, message: 'Refining position accuracy...' },
-  { time: 24, message: 'Verifying coordinates...' },
-  { time: 27, message: 'Location locked!' },
-];
+// Location point (center where circles intersect)
+const LOCATION = { x: 50, y: 50 };
 
-const GPSLocatingAnimation = ({ onComplete, duration = 30000 }: GPSLocatingAnimationProps) => {
+const GPSLocatingAnimation = ({ onComplete, duration = 10000 }: GPSLocatingAnimationProps) => {
   const [progress, setProgress] = useState(0);
-  const [currentStatus, setCurrentStatus] = useState(STATUS_MESSAGES[0].message);
-  const [lockedSatellites, setLockedSatellites] = useState<number[]>([]);
-  const [showPulse, setShowPulse] = useState(false);
+  const [activeSatellites, setActiveSatellites] = useState<number[]>([]);
+  const [showLocation, setShowLocation] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('Contacting GNSS satellites...');
 
   useEffect(() => {
     const startTime = Date.now();
+    
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const newProgress = Math.min((elapsed / duration) * 100, 100);
       setProgress(newProgress);
 
-      // Update status messages
+      // Activate satellites progressively
       const elapsedSeconds = elapsed / 1000;
-      const currentMessage = [...STATUS_MESSAGES]
-        .reverse()
-        .find(s => elapsedSeconds >= s.time);
-      if (currentMessage) {
-        setCurrentStatus(currentMessage.message);
+      
+      if (elapsedSeconds >= 1 && !activeSatellites.includes(1)) {
+        setActiveSatellites(prev => [...prev, 1]);
+        setStatusMessage('GPS-IIF signal acquired...');
       }
-
-      // Lock satellites progressively
-      if (elapsedSeconds >= 6 && !lockedSatellites.includes(1)) {
-        setLockedSatellites(prev => [...prev, 1]);
+      if (elapsedSeconds >= 2.5 && !activeSatellites.includes(2)) {
+        setActiveSatellites(prev => [...prev, 2]);
+        setStatusMessage('GALILEO signal acquired...');
       }
-      if (elapsedSeconds >= 9 && !lockedSatellites.includes(2)) {
-        setLockedSatellites(prev => [...prev, 2]);
+      if (elapsedSeconds >= 4 && !activeSatellites.includes(3)) {
+        setActiveSatellites(prev => [...prev, 3]);
+        setStatusMessage('GLONASS signal acquired...');
       }
-      if (elapsedSeconds >= 12 && !lockedSatellites.includes(3)) {
-        setLockedSatellites(prev => [...prev, 3]);
+      if (elapsedSeconds >= 5.5 && !activeSatellites.includes(4)) {
+        setActiveSatellites(prev => [...prev, 4]);
+        setStatusMessage('GPS-III signal acquired...');
       }
-      if (elapsedSeconds >= 18 && !lockedSatellites.includes(4)) {
-        setLockedSatellites(prev => [...prev, 4]);
+      if (elapsedSeconds >= 7) {
+        setStatusMessage('Calculating intersection point...');
       }
-
-      // Show pulse near the end
-      if (elapsedSeconds >= 24) {
-        setShowPulse(true);
+      if (elapsedSeconds >= 8) {
+        setShowLocation(true);
+        setStatusMessage('Location locked!');
       }
 
       if (elapsed >= duration) {
         clearInterval(interval);
         onComplete();
       }
-    }, 100);
+    }, 50);
 
     return () => clearInterval(interval);
-  }, [duration, onComplete, lockedSatellites]);
+  }, [duration, onComplete, activeSatellites]);
+
+  // Calculate distance from satellite to location for circle radius
+  const getDistance = (sat: typeof SATELLITES[0]) => {
+    const dx = sat.x - LOCATION.x;
+    const dy = sat.y - LOCATION.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="py-12 flex flex-col items-center"
+      className="py-8 flex flex-col items-center"
     >
-      {/* Main Animation Container */}
-      <div className="relative w-80 h-80 mb-8">
-        {/* Outer orbit ring */}
-        <motion.div
-          className="absolute inset-0 border border-dashed rounded-full"
-          style={{ borderColor: ORBIT_COLORS.MEO.hex }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-        />
-        
-        {/* Middle orbit ring */}
-        <motion.div
-          className="absolute inset-8 border border-dashed rounded-full"
-          style={{ borderColor: ORBIT_COLORS.MEO.hex, opacity: 0.6 }}
-          animate={{ rotate: -360 }}
-          transition={{ duration: 45, repeat: Infinity, ease: 'linear' }}
-        />
-        
-        {/* Inner orbit ring */}
-        <motion.div
-          className="absolute inset-16 border border-dashed rounded-full"
-          style={{ borderColor: ORBIT_COLORS.LEO.hex, opacity: 0.4 }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-        />
-
-        {/* Earth */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div 
-            className="relative w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 via-green-400 to-blue-600 shadow-2xl"
-            style={{ boxShadow: '0 0 40px rgba(59, 130, 246, 0.5)' }}
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          >
-            {/* Earth glow */}
-            <div className="absolute inset-0 rounded-full bg-blue-400/20 blur-xl" />
+      {/* Main Visualization */}
+      <div className="relative w-80 h-80 mb-6">
+        <svg className="w-full h-full" viewBox="0 0 100 100">
+          {/* Background grid for context */}
+          <defs>
+            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.1" className="text-border" />
+            </pattern>
             
-            {/* Location pin on Earth */}
-            <AnimatePresence>
-              {showPulse && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className="w-4 h-4 rounded-full bg-red-500"
-                    style={{ boxShadow: '0 0 20px rgba(239, 68, 68, 0.8)' }}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-
-        {/* Orbiting Satellites */}
-        {SATELLITES.map((sat, index) => {
-          const isLocked = lockedSatellites.includes(sat.id);
-          const orbitSize = index % 2 === 0 ? 'inset-0' : 'inset-8';
-          const duration = 8 + index * 2;
-          const direction = index % 2 === 0 ? 360 : -360;
+            {/* Glow filter for location */}
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
           
-          return (
-            <motion.div
-              key={sat.id}
-              className={`absolute ${orbitSize}`}
-              animate={{ rotate: direction }}
-              transition={{ 
-                duration, 
-                repeat: Infinity, 
-                ease: 'linear',
-                delay: sat.delay 
-              }}
-            >
-              {/* Satellite position */}
-              <motion.div 
-                className="absolute"
-                style={{
-                  top: index === 0 ? '0%' : index === 1 ? '50%' : index === 2 ? '100%' : '50%',
-                  left: index === 0 ? '50%' : index === 1 ? '100%' : index === 2 ? '50%' : '0%',
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                {/* Signal beam to Earth when locked */}
-                <AnimatePresence>
-                  {isLocked && (
-                    <motion.div
-                      initial={{ opacity: 0, scaleY: 0 }}
-                      animate={{ opacity: [0.3, 0.6, 0.3], scaleY: 1 }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 w-0.5 h-20 origin-top"
-                      style={{
-                        background: `linear-gradient(to bottom, ${ORBIT_COLORS.MEO.hex}, transparent)`,
+          <rect width="100" height="100" fill="url(#grid)" opacity="0.3" />
+
+          {/* Expanding circles from each satellite */}
+          {SATELLITES.map((sat) => {
+            const isActive = activeSatellites.includes(sat.id);
+            const distance = getDistance(sat);
+            
+            return (
+              <g key={sat.id}>
+                {/* Signal circles expanding to reach the location point */}
+                {isActive && (
+                  <>
+                    {/* Main distance circle (fixed at intersection) */}
+                    <motion.circle
+                      cx={sat.x}
+                      cy={sat.y}
+                      initial={{ r: 0, opacity: 0 }}
+                      animate={{ r: distance, opacity: 0.6 }}
+                      transition={{ duration: 1.5, ease: 'easeOut' }}
+                      fill="none"
+                      stroke={ORBIT_COLORS.MEO.hex}
+                      strokeWidth="0.5"
+                      strokeDasharray="2 1"
+                    />
+                    
+                    {/* Pulsing expanding circles (signal waves) */}
+                    <motion.circle
+                      cx={sat.x}
+                      cy={sat.y}
+                      fill="none"
+                      stroke={ORBIT_COLORS.LEO.hex}
+                      strokeWidth="0.3"
+                      initial={{ r: 0, opacity: 0.8 }}
+                      animate={{ r: [0, distance + 10], opacity: [0.8, 0] }}
+                      transition={{ 
+                        duration: 2, 
+                        repeat: Infinity, 
+                        delay: sat.delay,
+                        ease: 'easeOut'
                       }}
                     />
-                  )}
-                </AnimatePresence>
-                
-                {/* Satellite icon */}
-                <motion.div
-                  animate={isLocked ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 0.5 }}
-                >
-                  <Satellite 
-                    className={`w-5 h-5 ${isLocked ? 'text-green-400' : 'text-yellow-400'}`}
-                    style={{ 
-                      filter: `drop-shadow(0 0 6px ${isLocked ? '#4ade80' : ORBIT_COLORS.MEO.hex})`,
-                    }}
-                  />
-                </motion.div>
-                
-                {/* Lock indicator */}
-                <AnimatePresence>
-                  {isLocked && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-green-400"
+                    <motion.circle
+                      cx={sat.x}
+                      cy={sat.y}
+                      fill="none"
+                      stroke={ORBIT_COLORS.LEO.hex}
+                      strokeWidth="0.2"
+                      initial={{ r: 0, opacity: 0.5 }}
+                      animate={{ r: [0, distance + 15], opacity: [0.5, 0] }}
+                      transition={{ 
+                        duration: 2.5, 
+                        repeat: Infinity, 
+                        delay: sat.delay + 0.5,
+                        ease: 'easeOut'
+                      }}
                     />
-                  )}
-                </AnimatePresence>
-              </motion.div>
+
+                    {/* Line from satellite to location (when showing location) */}
+                    {showLocation && (
+                      <motion.line
+                        x1={sat.x}
+                        y1={sat.y}
+                        x2={LOCATION.x}
+                        y2={LOCATION.y}
+                        stroke={ORBIT_COLORS.MEO.hex}
+                        strokeWidth="0.3"
+                        strokeDasharray="1 1"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.5 }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    )}
+                  </>
+                )}
+              </g>
+            );
+          })}
+
+          {/* Location point (intersection) */}
+          <AnimatePresence>
+            {showLocation && (
+              <g filter="url(#glow)">
+                {/* Pulsing rings at location */}
+                <motion.circle
+                  cx={LOCATION.x}
+                  cy={LOCATION.y}
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="0.5"
+                  initial={{ r: 0, opacity: 1 }}
+                  animate={{ r: [0, 8], opacity: [1, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                <motion.circle
+                  cx={LOCATION.x}
+                  cy={LOCATION.y}
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="0.3"
+                  initial={{ r: 0, opacity: 0.7 }}
+                  animate={{ r: [0, 12], opacity: [0.7, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+                />
+                
+                {/* Center dot */}
+                <motion.circle
+                  cx={LOCATION.x}
+                  cy={LOCATION.y}
+                  r="2"
+                  fill="#ef4444"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                />
+                
+                {/* "You" label */}
+                <motion.text
+                  x={LOCATION.x}
+                  y={LOCATION.y + 7}
+                  textAnchor="middle"
+                  className="text-[3px] fill-foreground font-medium"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  YOUR LOCATION
+                </motion.text>
+              </g>
+            )}
+          </AnimatePresence>
+
+          {/* Satellites */}
+          {SATELLITES.map((sat) => {
+            const isActive = activeSatellites.includes(sat.id);
+            
+            return (
+              <g key={`sat-${sat.id}`}>
+                {/* Satellite glow when active */}
+                {isActive && (
+                  <motion.circle
+                    cx={sat.x}
+                    cy={sat.y}
+                    r="3"
+                    fill={ORBIT_COLORS.MEO.hex}
+                    opacity="0.3"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [1, 1.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                )}
+                
+                {/* Satellite icon representation */}
+                <motion.circle
+                  cx={sat.x}
+                  cy={sat.y}
+                  r="2"
+                  fill={isActive ? ORBIT_COLORS.MEO.hex : 'currentColor'}
+                  className={isActive ? '' : 'text-muted-foreground'}
+                  initial={{ opacity: 0.5 }}
+                  animate={{ opacity: isActive ? 1 : 0.5 }}
+                />
+                
+                {/* Satellite label */}
+                <text
+                  x={sat.x}
+                  y={sat.y - 4}
+                  textAnchor="middle"
+                  className={`text-[2.5px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground'}`}
+                >
+                  {sat.name}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+
+        {/* Satellite icons overlay */}
+        {SATELLITES.map((sat) => {
+          const isActive = activeSatellites.includes(sat.id);
+          return (
+            <motion.div
+              key={`icon-${sat.id}`}
+              className="absolute"
+              style={{
+                left: `${sat.x}%`,
+                top: `${sat.y}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <Satellite 
+                className={`w-4 h-4 ${isActive ? 'text-yellow-400' : 'text-muted-foreground'}`}
+                style={isActive ? { filter: `drop-shadow(0 0 4px ${ORBIT_COLORS.MEO.hex})` } : {}}
+              />
             </motion.div>
           );
         })}
-
-        {/* Triangulation lines when satellites are locked */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          <defs>
-            <linearGradient id="signalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={ORBIT_COLORS.MEO.hex} stopOpacity="0.6" />
-              <stop offset="100%" stopColor={ORBIT_COLORS.LEO.hex} stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          
-          {lockedSatellites.length >= 3 && (
-            <motion.g
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              {/* Triangulation effect - pulsing circles */}
-              <motion.circle
-                cx="50%"
-                cy="50%"
-                r="20"
-                fill="none"
-                stroke={ORBIT_COLORS.LEO.hex}
-                strokeWidth="1"
-                animate={{ r: [20, 40, 20], opacity: [0.8, 0.2, 0.8] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-              <motion.circle
-                cx="50%"
-                cy="50%"
-                r="30"
-                fill="none"
-                stroke={ORBIT_COLORS.MEO.hex}
-                strokeWidth="1"
-                animate={{ r: [30, 50, 30], opacity: [0.6, 0.1, 0.6] }}
-                transition={{ duration: 2.5, repeat: Infinity, delay: 0.3 }}
-              />
-            </motion.g>
-          )}
-        </svg>
       </div>
 
       {/* Status Section */}
-      <div className="text-center space-y-4 max-w-md">
-        {/* Satellite lock status */}
-        <div className="flex justify-center gap-3 mb-4">
+      <div className="text-center space-y-3 max-w-sm">
+        {/* Satellite status indicators */}
+        <div className="flex justify-center gap-2 flex-wrap">
           {SATELLITES.map((sat) => {
-            const isLocked = lockedSatellites.includes(sat.id);
+            const isActive = activeSatellites.includes(sat.id);
             return (
               <motion.div
                 key={sat.id}
-                className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                  isLocked 
+                className={`px-2 py-1 rounded-full text-xs font-medium border transition-all ${
+                  isActive 
                     ? 'bg-green-500/20 border-green-500/50 text-green-400' 
                     : 'bg-secondary/50 border-border text-muted-foreground'
                 }`}
-                animate={isLocked ? { scale: [1, 1.1, 1] } : {}}
+                animate={isActive ? { scale: [1, 1.05, 1] } : {}}
                 transition={{ duration: 0.3 }}
               >
-                {sat.name.split('-')[0]}
+                {sat.name} {isActive && '✓'}
               </motion.div>
             );
           })}
@@ -279,40 +326,34 @@ const GPSLocatingAnimation = ({ onComplete, duration = 30000 }: GPSLocatingAnima
 
         {/* Status message */}
         <motion.p
-          key={currentStatus}
-          initial={{ opacity: 0, y: 10 }}
+          key={statusMessage}
+          initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-foreground font-medium"
         >
-          {currentStatus}
+          {statusMessage}
         </motion.p>
 
         {/* Progress bar */}
-        <div className="w-64 mx-auto">
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
+        <div className="w-56 mx-auto">
+          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
             <motion.div
               className="h-full rounded-full"
               style={{ 
                 background: `linear-gradient(90deg, ${ORBIT_COLORS.LEO.hex}, ${ORBIT_COLORS.MEO.hex})`,
                 width: `${progress}%`
               }}
-              transition={{ duration: 0.1 }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {Math.round(progress)}% — Triangulating position using {lockedSatellites.length}/4 satellites
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Trilateration: {activeSatellites.length}/4 satellites
           </p>
         </div>
 
         {/* Educational note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
-          className="text-xs text-muted-foreground mt-4 max-w-sm mx-auto"
-        >
-          Your GPS needs signals from at least 4 satellites to calculate your precise 3D position through trilateration.
-        </motion.p>
+        <p className="text-xs text-muted-foreground mt-2">
+          GPS calculates your position by finding where distance circles from multiple satellites intersect.
+        </p>
       </div>
     </motion.div>
   );

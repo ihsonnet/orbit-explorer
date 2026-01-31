@@ -318,7 +318,7 @@ const SkyAboveMe = () => {
             {isLocatingGPS && (
               <GPSLocatingAnimation 
                 onComplete={handleGPSAnimationComplete}
-                duration={30000}
+                duration={10000}
               />
             )}
           </AnimatePresence>
