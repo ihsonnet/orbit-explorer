@@ -3,6 +3,7 @@ import {
   updateTLECache, 
   getCachedTLECount,
   classifySatellite,
+  classifyOrbitByAltitude,
   TLECacheEntry,
   getCachedSatellitesWithPositionsAsync
 } from '@/lib/tleCache';
@@ -42,10 +43,16 @@ export function useTLEData() {
         
         // Load satellite positions
         const sats = await getCachedSatellitesWithPositionsAsync();
-        const classified = sats.map(sat => ({
-          ...sat,
-          ...classifySatellite(sat.name),
-        }));
+        const classified = sats.map(sat => {
+          const nameClassification = classifySatellite(sat.name);
+          // Use actual altitude for orbit classification (more accurate)
+          const orbitClass = classifyOrbitByAltitude(sat.alt);
+          return {
+            ...sat,
+            ...nameClassification,
+            orbitClass, // Override with altitude-based classification
+          };
+        });
         setSatellites(classified);
       } catch (err) {
         setError('Failed to fetch satellite data');
@@ -71,10 +78,15 @@ export function useTLEData() {
       
       // Reload positions
       const sats = await getCachedSatellitesWithPositionsAsync();
-      const classified = sats.map(sat => ({
-        ...sat,
-        ...classifySatellite(sat.name),
-      }));
+      const classified = sats.map(sat => {
+        const nameClassification = classifySatellite(sat.name);
+        const orbitClass = classifyOrbitByAltitude(sat.alt);
+        return {
+          ...sat,
+          ...nameClassification,
+          orbitClass,
+        };
+      });
       setSatellites(classified);
     } catch (err) {
       setError('Failed to refresh satellite data');
@@ -125,10 +137,15 @@ export function useSatellitePositions(updateInterval = 30000) {
   useEffect(() => {
     const loadPositions = async () => {
       const sats = await getCachedSatellitesWithPositionsAsync();
-      const classified = sats.map(sat => ({
-        ...sat,
-        ...classifySatellite(sat.name),
-      }));
+      const classified = sats.map(sat => {
+        const nameClassification = classifySatellite(sat.name);
+        const orbitClass = classifyOrbitByAltitude(sat.alt);
+        return {
+          ...sat,
+          ...nameClassification,
+          orbitClass,
+        };
+      });
       setSatellites(classified);
     };
 
