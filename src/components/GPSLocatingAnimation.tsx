@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Satellite } from 'lucide-react';
 
 interface GPSLocatingAnimationProps {
   onComplete: () => void;
@@ -8,10 +7,10 @@ interface GPSLocatingAnimationProps {
 }
 
 const SATELLITES = [
-  { id: 1, name: 'GPS', angle: 0 },
-  { id: 2, name: 'GALILEO', angle: 90 },
-  { id: 3, name: 'GLONASS', angle: 180 },
-  { id: 4, name: 'BEIDOU', angle: 270 },
+  { id: 1, name: 'GPS', angle: 45 },
+  { id: 2, name: 'GALILEO', angle: 135 },
+  { id: 3, name: 'GLONASS', angle: 225 },
+  { id: 4, name: 'BEIDOU', angle: 315 },
 ];
 
 const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimationProps) => {
@@ -63,180 +62,176 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
     return () => clearInterval(interval);
   }, [duration, onComplete, activeSatellites]);
 
-  const orbitRadius = 42;
-  const earthRadius = 12;
+  const orbitRadius = 38;
+  const earthRadius = 14;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="py-10 flex flex-col items-center"
+      className="py-8 flex flex-col items-center"
     >
       {/* Main Visualization */}
-      <div className="relative w-72 h-72 mb-8">
+      <div className="relative w-64 h-64 mb-6">
         <svg 
           className="w-full h-full" 
           viewBox="0 0 100 100"
-          style={{ overflow: 'visible' }}
         >
-          {/* Orbit path */}
+          {/* Orbit path - GEO orbit ring */}
           <circle
             cx="50"
             cy="50"
             r={orbitRadius}
             fill="none"
             stroke="currentColor"
-            strokeWidth="0.3"
-            strokeDasharray="2 2"
-            className="text-muted-foreground/30"
+            strokeWidth="0.4"
+            strokeDasharray="2 1.5"
+            className="text-muted-foreground/20"
           />
 
-          {/* Earth */}
+          {/* Earth with gradient */}
+          <defs>
+            <radialGradient id="earthGradient" cx="40%" cy="40%">
+              <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
+              <stop offset="100%" stopColor="hsl(var(--primary) / 0.1)" />
+            </radialGradient>
+          </defs>
+          
           <circle
             cx="50"
             cy="50"
             r={earthRadius}
-            className="fill-primary/20"
-            stroke="currentColor"
+            fill="url(#earthGradient)"
+            stroke="hsl(var(--primary) / 0.4)"
             strokeWidth="0.5"
-            style={{ filter: 'drop-shadow(0 0 8px hsl(var(--primary) / 0.3))' }}
-          />
-          
-          {/* Earth inner glow */}
-          <circle
-            cx="50"
-            cy="50"
-            r={earthRadius - 2}
-            className="fill-primary/10"
           />
 
-          {/* Satellites orbiting with their distance circles */}
-          <motion.g
-            animate={{ rotate: 360 }}
-            transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-            style={{ transformOrigin: '50px 50px' }}
-          >
-            {SATELLITES.map((sat) => {
-              const isActive = activeSatellites.includes(sat.id);
-              const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
-              const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
-              const distance = orbitRadius;
-              
-              return (
-                <g key={`sat-${sat.id}`}>
-                  {/* Distance circle - moves with satellite */}
-                  {isActive && (
-                    <>
-                      <motion.circle
-                        cx={satX}
-                        cy={satY}
-                        fill="none"
-                        className="stroke-muted-foreground/30"
-                        strokeWidth="0.3"
-                        strokeDasharray="1.5 1"
-                        initial={{ r: 0, opacity: 0 }}
-                        animate={{ r: distance, opacity: 0.6 }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                      />
-                      
-                      {/* Subtle pulse on circle */}
-                      <motion.circle
-                        cx={satX}
-                        cy={satY}
-                        fill="none"
-                        className="stroke-primary/30"
-                        strokeWidth="0.2"
-                        initial={{ r: distance - 2 }}
-                        animate={{ r: distance + 3, opacity: [0.4, 0] }}
-                        transition={{ 
-                          duration: 3, 
-                          repeat: Infinity,
-                          ease: 'easeOut'
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {/* Connection line to Earth center when location found */}
-                  {showLocation && isActive && (
-                    <motion.line
+          {/* Static satellites on orbit */}
+          {SATELLITES.map((sat) => {
+            const isActive = activeSatellites.includes(sat.id);
+            const satX = 50 + orbitRadius * Math.cos((sat.angle * Math.PI) / 180);
+            const satY = 50 + orbitRadius * Math.sin((sat.angle * Math.PI) / 180);
+            
+            return (
+              <g key={`sat-${sat.id}`}>
+                {/* Communication signal - traveling dots from satellite to Earth */}
+                {isActive && (
+                  <>
+                    {/* Signal beam path (subtle) */}
+                    <line
                       x1={satX}
                       y1={satY}
                       x2="50"
                       y2="50"
-                      className="stroke-primary/40"
+                      stroke="hsl(var(--primary) / 0.15)"
                       strokeWidth="0.3"
-                      strokeDasharray="1 1"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
                     />
-                  )}
-
-                  {/* Satellite glow */}
-                  {isActive && (
+                    
+                    {/* Animated signal pulse traveling to Earth */}
                     <motion.circle
-                      cx={satX}
-                      cy={satY}
-                      r="3"
-                      className="fill-primary/15"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0.2, 0.5, 0.2] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                      r="1"
+                      fill="hsl(var(--primary))"
+                      initial={{ 
+                        cx: satX, 
+                        cy: satY,
+                        opacity: 0.8
+                      }}
+                      animate={{ 
+                        cx: 50, 
+                        cy: 50,
+                        opacity: [0.8, 0.4, 0]
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        ease: 'linear',
+                        delay: sat.id * 0.2
+                      }}
                     />
-                  )}
-                  
-                  {/* Satellite dot */}
-                  <circle
+                    
+                    {/* Second pulse offset */}
+                    <motion.circle
+                      r="0.8"
+                      fill="hsl(var(--primary))"
+                      initial={{ 
+                        cx: satX, 
+                        cy: satY,
+                        opacity: 0.6
+                      }}
+                      animate={{ 
+                        cx: 50, 
+                        cy: 50,
+                        opacity: [0.6, 0.3, 0]
+                      }}
+                      transition={{ 
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        ease: 'linear',
+                        delay: sat.id * 0.2 + 0.75
+                      }}
+                    />
+                  </>
+                )}
+
+                {/* Satellite glow when active */}
+                {isActive && (
+                  <motion.circle
                     cx={satX}
                     cy={satY}
-                    r="1.5"
-                    className={isActive ? 'fill-primary' : 'fill-muted-foreground/40'}
+                    r="3"
+                    fill="hsl(var(--primary) / 0.2)"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
                   />
-                  
-                  {/* Label - counter-rotate to keep text readable */}
-                  <motion.g
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-                    style={{ transformOrigin: `${satX}px ${satY}px` }}
-                  >
-                    <text
-                      x={satX}
-                      y={satY - 4}
-                      textAnchor="middle"
-                      className={`text-[2.5px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/40'}`}
-                    >
-                      {sat.name}
-                    </text>
-                  </motion.g>
-                </g>
-              );
-            })}
-          </motion.g>
+                )}
+                
+                {/* Satellite dot */}
+                <circle
+                  cx={satX}
+                  cy={satY}
+                  r="2"
+                  fill={isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.3)'}
+                />
+                
+                {/* Satellite label */}
+                <text
+                  x={satX}
+                  y={satY - 5}
+                  textAnchor="middle"
+                  fontSize="3"
+                  fontWeight="500"
+                  fill={isActive ? 'hsl(var(--foreground))' : 'hsl(var(--muted-foreground) / 0.4)'}
+                >
+                  {sat.name}
+                </text>
+              </g>
+            );
+          })}
 
           {/* Location point on Earth */}
           <AnimatePresence>
             {showLocation && (
               <g>
-                {/* Pulse rings */}
+                {/* Pulse ring */}
                 <motion.circle
                   cx="50"
                   cy="50"
                   fill="none"
-                  className="stroke-destructive"
-                  strokeWidth="0.5"
-                  initial={{ r: 0, opacity: 1 }}
-                  animate={{ r: 6, opacity: 0 }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
+                  stroke="hsl(var(--destructive))"
+                  strokeWidth="0.6"
+                  initial={{ r: 1, opacity: 1 }}
+                  animate={{ r: 8, opacity: 0 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
                 />
                 
                 {/* Location dot */}
                 <motion.circle
                   cx="50"
                   cy="50"
-                  r="2"
-                  className="fill-destructive"
+                  r="2.5"
+                  fill="hsl(var(--destructive))"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: 'spring', stiffness: 200, damping: 15 }}
@@ -244,23 +239,26 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
               </g>
             )}
           </AnimatePresence>
-
         </svg>
       </div>
 
       {/* Status */}
-      <div className="text-center space-y-4 w-full max-w-xs">
+      <div className="text-center space-y-3 w-full max-w-xs">
         {/* Satellite indicators */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-3">
           {SATELLITES.map((sat) => {
             const isActive = activeSatellites.includes(sat.id);
             return (
-              <div
-                key={sat.id}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  isActive ? 'bg-primary' : 'bg-muted-foreground/30'
-                }`}
-              />
+              <div key={sat.id} className="flex flex-col items-center gap-1">
+                <div
+                  className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                    isActive ? 'bg-primary shadow-[0_0_8px_hsl(var(--primary))]' : 'bg-muted-foreground/30'
+                  }`}
+                />
+                <span className={`text-[10px] ${isActive ? 'text-foreground' : 'text-muted-foreground/50'}`}>
+                  {sat.name}
+                </span>
+              </div>
             );
           })}
         </div>
@@ -268,14 +266,14 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
         {/* Status text */}
         <motion.p
           key={statusMessage}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-sm text-foreground"
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-sm text-foreground font-medium"
         >
           {statusMessage}
         </motion.p>
 
-        {/* Progress */}
+        {/* Progress bar */}
         <div className="px-4">
           <div className="h-1 bg-secondary rounded-full overflow-hidden">
             <motion.div
