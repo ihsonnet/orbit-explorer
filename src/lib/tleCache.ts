@@ -164,6 +164,14 @@ export function getCachedSatellitesWithPositions(): Array<{
   return [];
 }
 
+// Classify orbit based on actual altitude (more accurate than name-based)
+export function classifyOrbitByAltitude(altKm: number): 'LEO' | 'MEO' | 'GEO' | 'HEO' {
+  if (altKm < 2000) return 'LEO';
+  if (altKm >= 35000 && altKm <= 36000) return 'GEO';
+  if (altKm >= 2000 && altKm < 35000) return 'MEO';
+  return 'HEO'; // Highly elliptical or beyond GEO
+}
+
 // Async version that uses IndexedDB
 export async function getCachedSatellitesWithPositionsAsync(): Promise<Array<{
   noradId: string;
@@ -240,7 +248,7 @@ export function classifySatellite(name: string): {
     type = 'SCIENCE';
   }
   
-  // Determine orbit class based on typical satellite characteristics
+  // Default orbit class based on name (will be overridden by actual altitude)
   let orbitClass: 'LEO' | 'MEO' | 'GEO' | 'HEO' = 'LEO';
   if (upperName.includes('GPS') || upperName.includes('GALILEO') || upperName.includes('GLONASS') || upperName.includes('BEIDOU')) {
     orbitClass = 'MEO';

@@ -130,7 +130,7 @@ export function calculateSatellitePosition(
   }
 }
 
-// Check if satellite is visible from a location
+// Check if satellite is visible from a location using proper look angles
 export function isSatelliteVisible(
   observerLat: number,
   observerLng: number,
@@ -146,30 +146,56 @@ export function isSatelliteVisible(
   const satLatRad = satLat * (Math.PI / 180);
   const satLngRad = satLng * (Math.PI / 180);
   
-  // Calculate slant range vector
-  const dLng = satLngRad - obsLngRad;
+  // Observer position vector (ECI approximation)
+  const obsR = earthRadius;
+  const obsX = obsR * Math.cos(obsLatRad) * Math.cos(obsLngRad);
+  const obsY = obsR * Math.cos(obsLatRad) * Math.sin(obsLngRad);
+  const obsZ = obsR * Math.sin(obsLatRad);
   
-  // Simplified elevation calculation
-  const cosD = Math.sin(obsLatRad) * Math.sin(satLatRad) + 
-               Math.cos(obsLatRad) * Math.cos(satLatRad) * Math.cos(dLng);
-  const d = earthRadius * Math.acos(cosD);
+  // Satellite position vector
+  const satR = earthRadius + satAlt;
+  const satX = satR * Math.cos(satLatRad) * Math.cos(satLngRad);
+  const satY = satR * Math.cos(satLatRad) * Math.sin(satLngRad);
+  const satZ = satR * Math.sin(satLatRad);
   
-  const elevation = Math.atan2(
-    satAlt - d * d / (2 * earthRadius),
-    d
-  ) * (180 / Math.PI);
+  // Range vector (satellite - observer)
+  const rangeX = satX - obsX;
+  const rangeY = satY - obsY;
+  const rangeZ = satZ - obsZ;
+  const range = Math.sqrt(rangeX * rangeX + rangeY * rangeY + rangeZ * rangeZ);
   
-  // Calculate azimuth
-  const y = Math.sin(dLng) * Math.cos(satLatRad);
-  const x = Math.cos(obsLatRad) * Math.sin(satLatRad) - 
-            Math.sin(obsLatRad) * Math.cos(satLatRad) * Math.cos(dLng);
-  let azimuth = Math.atan2(y, x) * (180 / Math.PI);
-  azimuth = (azimuth + 360) % 360;
+  // Transform to topocentric (SEZ) coordinates
+  // South unit vector
+  const sX = Math.sin(obsLatRad) * Math.cos(obsLngRad);
+  const sY = Math.sin(obsLatRad) * Math.sin(obsLngRad);
+  const sZ = -Math.cos(obsLatRad);
+  
+  // East unit vector
+  const eX = -Math.sin(obsLngRad);
+  const eY = Math.cos(obsLngRad);
+  const eZ = 0;
+  
+  // Zenith unit vector
+  const zX = Math.cos(obsLatRad) * Math.cos(obsLngRad);
+  const zY = Math.cos(obsLatRad) * Math.sin(obsLngRad);
+  const zZ = Math.sin(obsLatRad);
+  
+  // Project range onto SEZ
+  const rangeS = sX * rangeX + sY * rangeY + sZ * rangeZ;
+  const rangeE = eX * rangeX + eY * rangeY + eZ * rangeZ;
+  const rangeZen = zX * rangeX + zY * rangeY + zZ * rangeZ;
+  
+  // Calculate elevation (angle above horizon)
+  const elevation = Math.asin(rangeZen / range) * (180 / Math.PI);
+  
+  // Calculate azimuth (angle from north, clockwise)
+  let azimuth = Math.atan2(rangeE, -rangeS) * (180 / Math.PI);
+  if (azimuth < 0) azimuth += 360;
   
   return {
     visible: elevation > 0,
-    elevation,
-    azimuth,
+    elevation: Math.round(elevation * 10) / 10, // Round to 1 decimal
+    azimuth: Math.round(azimuth * 10) / 10,
   };
 }
 
