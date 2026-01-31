@@ -120,7 +120,7 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
             className="fill-primary/10"
           />
 
-          {/* Rotating satellite group - everything moves together */}
+          {/* Trilateration circles - drawn first, behind satellites */}
           <motion.g
             animate={{ rotate: 360 }}
             transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
@@ -131,55 +131,76 @@ const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimat
               const pos = getSatellitePosition(sat.angle);
               const distanceToCenter = orbitRadius;
               
+              return isActive ? (
+                <motion.circle
+                  key={`circle-${sat.id}`}
+                  cx={pos.x}
+                  cy={pos.y}
+                  fill="none"
+                  className="stroke-primary/30"
+                  strokeWidth="0.3"
+                  strokeDasharray="2 1.5"
+                  initial={{ r: 0, opacity: 0 }}
+                  animate={{ r: distanceToCenter, opacity: 0.4 }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                />
+              ) : null;
+            })}
+          </motion.g>
+
+          {/* Rotating satellite group - satellites stay on orbit */}
+          <motion.g
+            animate={{ rotate: 360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+            style={{ transformOrigin: '50px 50px' }}
+          >
+            {SATELLITES.map((sat) => {
+              const isActive = activeSatellites.includes(sat.id);
+              const pos = getSatellitePosition(sat.angle);
+              const iconSize = 4;
+              
               return (
                 <g key={`sat-${sat.id}`}>
-                  {/* Trilateration circle - moves with satellite */}
-                  {isActive && (
-                    <motion.circle
-                      cx={pos.x}
-                      cy={pos.y}
-                      fill="none"
-                      className="stroke-primary/40"
-                      strokeWidth="0.4"
-                      strokeDasharray="2 1.5"
-                      initial={{ r: 0, opacity: 0 }}
-                      animate={{ r: distanceToCenter, opacity: 0.5 }}
-                      transition={{ duration: 1, ease: 'easeOut' }}
-                    />
-                  )}
-
                   {/* Satellite glow */}
                   {isActive && (
                     <motion.circle
                       cx={pos.x}
                       cy={pos.y}
-                      r="3"
+                      r="4"
                       className="fill-primary/20"
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      animate={{ opacity: [0.2, 0.5, 0.2] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     />
                   )}
                   
-                  {/* Satellite dot */}
-                  <circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r="1.8"
-                    className={isActive ? 'fill-primary' : 'fill-muted-foreground/40'}
-                  />
-                  
-                  {/* Label - counter-rotate to stay readable */}
+                  {/* Satellite icon using foreignObject */}
                   <motion.g
                     animate={{ rotate: -360 }}
                     transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
                     style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}
                   >
+                    <foreignObject
+                      x={pos.x - iconSize / 2}
+                      y={pos.y - iconSize / 2}
+                      width={iconSize}
+                      height={iconSize}
+                    >
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Satellite 
+                          className={isActive ? 'text-primary' : 'text-muted-foreground/40'}
+                          size={iconSize * 2.5}
+                          strokeWidth={1.5}
+                        />
+                      </div>
+                    </foreignObject>
+                    
+                    {/* Label */}
                     <text
                       x={pos.x}
-                      y={pos.y - 5}
+                      y={pos.y - 4}
                       textAnchor="middle"
-                      className={`text-[2.5px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/40'}`}
+                      className={`text-[2px] font-medium ${isActive ? 'fill-foreground' : 'fill-muted-foreground/40'}`}
                     >
                       {sat.name}
                     </text>
