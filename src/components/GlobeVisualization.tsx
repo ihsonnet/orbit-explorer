@@ -65,7 +65,8 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
   const { isLoading, loadProgress, satelliteCount } = useTLEData();
   const satellites = useSatellitePositions(30000);
   const [allPoints, setAllPoints] = useState<SatellitePoint[]>([]);
-  const [selectedSatellite, setSelectedSatellite] = useState<SatellitePoint | null>(null);
+  const [hoveredSatellite, setHoveredSatellite] = useState<SatellitePoint | null>(null);
+  const [pinnedSatellite, setPinnedSatellite] = useState<SatellitePoint | null>(null);
   const [satelliteScreenPos, setSatelliteScreenPos] = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -173,9 +174,12 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     });
   }, [allPoints, filters]);
 
-  // Update satellite screen position when selected
+  // The satellite to display (pinned takes priority over hovered)
+  const displayedSatellite = pinnedSatellite || hoveredSatellite;
+
+  // Update satellite screen position when displayed
   useEffect(() => {
-    if (!selectedSatellite || !globeRef.current) {
+    if (!displayedSatellite || !globeRef.current) {
       setSatelliteScreenPos(null);
       return;
     }
@@ -184,9 +188,9 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       if (!globeRef.current) return;
       
       const coords = globeRef.current.getScreenCoords(
-        selectedSatellite.lat,
-        selectedSatellite.lng,
-        selectedSatellite.alt
+        displayedSatellite.lat,
+        displayedSatellite.lng,
+        displayedSatellite.alt
       );
       
       if (coords && coords.x !== undefined && coords.y !== undefined) {
@@ -197,7 +201,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     updatePosition();
     const interval = setInterval(updatePosition, 100);
     return () => clearInterval(interval);
-  }, [selectedSatellite]);
+  }, [displayedSatellite]);
 
   useEffect(() => {
     if (globeRef.current) {
@@ -270,8 +274,9 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
           `;
           el.style.cursor = 'pointer';
           el.style.pointerEvents = 'auto';
-          el.onmouseenter = () => setSelectedSatellite(d);
-          el.onmouseleave = () => setSelectedSatellite(null);
+          el.onmouseenter = () => setHoveredSatellite(d);
+          el.onmouseleave = () => setHoveredSatellite(null);
+          el.onclick = () => setPinnedSatellite(prev => prev?.noradId === d.noradId ? null : d);
           return el;
         }}
       />
@@ -311,17 +316,19 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                   key={orbit.id}
                   onClick={() => toggleOrbitClass(orbit.id)}
                   className={`
-                    flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer
+                    px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border-2
                     ${isActive 
-                      ? `${colors.bg} ${colors.border} ${colors.tailwind} shadow-sm` 
-                      : `bg-secondary/30 border-transparent ${colors.tailwind} opacity-60 hover:opacity-100 hover:bg-secondary/50`
+                      ? 'shadow-sm' 
+                      : 'opacity-60 hover:opacity-100'
                     }
-                    border
                   `}
-                  style={{ borderLeftColor: colors.hex, borderLeftWidth: '3px' }}
+                  style={{ 
+                    borderColor: colors.hex,
+                    backgroundColor: isActive ? `${colors.hex}20` : 'transparent',
+                    color: colors.hex
+                  }}
                 >
                   {orbit.label}
-                  {isActive && <Check className="w-3 h-3" />}
                 </button>
               );
             })}
@@ -337,6 +344,27 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       >
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">Filter by Type</p>
         <div className="space-y-1">
+          {/* All Types button */}
+          <button
+            onClick={() => onFiltersChange({ ...filters, types: [] })}
+            className={`
+              flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer
+              ${filters.types.length === 0 
+                ? 'bg-primary/20 text-primary' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }
+            `}
+          >
+            <div 
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ 
+                background: 'linear-gradient(135deg, #a855f7, #eab308, #3b82f6, #22c55e)',
+              }}
+            />
+            <span className="flex-1">All Types</span>
+            {filters.types.length === 0 && <Check className="w-3 h-3 text-primary" />}
+          </button>
+          
           {SATELLITE_TYPES.map((type) => {
             const isActive = filters.types.includes(type.id);
             const color = typeColors[type.id];
@@ -353,7 +381,6 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                 `}
                 style={{ 
                   backgroundColor: isActive ? `${color}20` : 'transparent',
-                  borderLeft: `3px solid ${color}`,
                 }}
               >
                 <div 
@@ -379,7 +406,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       >
         <div className="bg-card/90 backdrop-blur-sm rounded-xl p-3 border border-border h-full overflow-hidden flex flex-col">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">Filter by Operator</p>
-          <div className="flex-1 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
             {displayOperators.map((operator) => {
               const isActive = filters.operators.includes(operator);
               return (
@@ -387,15 +414,14 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                   key={operator}
                   onClick={() => toggleOperator(operator)}
                   className={`
-                    flex items-center gap-1 w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer
+                    w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer border
                     ${isActive 
-                      ? 'bg-primary/20 text-primary border-l-2 border-primary' 
-                      : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground border-l-2 border-transparent'
+                      ? 'border-foreground text-foreground bg-foreground/10' 
+                      : 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground'
                     }
                   `}
                 >
-                  <span className="flex-1 truncate">{operator}</span>
-                  {isActive && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
+                  <span className="truncate block">{operator}</span>
                 </button>
               );
             })}
@@ -405,7 +431,7 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
 
       {/* Satellite Info - Follows satellite position */}
       <AnimatePresence>
-        {selectedSatellite && satelliteScreenPos && (
+        {displayedSatellite && satelliteScreenPos && (
           <motion.div
             key="satellite-info"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -418,23 +444,25 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
             }}
             className="z-30 bg-card/95 backdrop-blur-sm rounded-xl p-3 border border-border max-w-[180px] pointer-events-auto"
           >
-            <button 
-              onClick={() => setSelectedSatellite(null)}
-              className="absolute -top-2 -right-2 w-5 h-5 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
-            >
-              ×
-            </button>
+            {pinnedSatellite && (
+              <button 
+                onClick={() => setPinnedSatellite(null)}
+                className="absolute -top-2 -right-2 w-5 h-5 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground text-xs"
+              >
+                ×
+              </button>
+            )}
             <h4 className="font-display font-semibold text-foreground text-sm leading-tight">
-              {selectedSatellite.name}
+              {displayedSatellite.name}
             </h4>
-            <p className="text-xs text-primary mt-0.5">{selectedSatellite.operator}</p>
+            <p className="text-xs text-primary mt-0.5">{displayedSatellite.operator}</p>
             <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-              <p>ID: {selectedSatellite.noradId}</p>
-              <p>{selectedSatellite.lat.toFixed(2)}°, {selectedSatellite.lng.toFixed(2)}°</p>
+              <p>ID: {displayedSatellite.noradId}</p>
+              <p>{displayedSatellite.lat.toFixed(2)}°, {displayedSatellite.lng.toFixed(2)}°</p>
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
-              <span className="impact-tag text-[10px] px-1.5 py-0.5">{selectedSatellite.type.replace('_', ' ')}</span>
-              <span className="impact-tag text-[10px] px-1.5 py-0.5">{selectedSatellite.orbitClass}</span>
+              <span className="impact-tag text-[10px] px-1.5 py-0.5">{displayedSatellite.type.replace('_', ' ')}</span>
+              <span className="impact-tag text-[10px] px-1.5 py-0.5">{displayedSatellite.orbitClass}</span>
             </div>
           </motion.div>
         )}
