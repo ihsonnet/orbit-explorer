@@ -35,6 +35,9 @@ const SkyAboveMe = () => {
     name: string;
     satellites: VisibleSatellite[];
   } | null>(null);
+  
+  // Ref for scrolling to animation
+  const animationRef = useRef<HTMLDivElement>(null);
 
   const handleGPSAnimationComplete = useCallback(() => {
     if (pendingLocationRef.current) {
@@ -48,6 +51,12 @@ const SkyAboveMe = () => {
 
   const handleGeolocation = () => {
     setIsLocatingGPS(true);
+    
+    // Scroll to animation after it renders
+    setTimeout(() => {
+      animationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -316,10 +325,12 @@ const SkyAboveMe = () => {
           {/* GPS Locating Animation */}
           <AnimatePresence>
             {isLocatingGPS && (
-              <GPSLocatingAnimation 
-                onComplete={handleGPSAnimationComplete}
-                duration={10000}
-              />
+              <div ref={animationRef}>
+                <GPSLocatingAnimation 
+                  onComplete={handleGPSAnimationComplete}
+                  duration={5000}
+                />
+              </div>
             )}
           </AnimatePresence>
 

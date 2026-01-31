@@ -14,7 +14,7 @@ const SATELLITES = [
   { id: 4, name: 'BEIDOU', angle: 270 },
 ];
 
-const GPSLocatingAnimation = ({ onComplete, duration = 10000 }: GPSLocatingAnimationProps) => {
+const GPSLocatingAnimation = ({ onComplete, duration = 5000 }: GPSLocatingAnimationProps) => {
   const [progress, setProgress] = useState(0);
   const [activeSatellites, setActiveSatellites] = useState<number[]>([]);
   const [showLocation, setShowLocation] = useState(false);
@@ -30,26 +30,26 @@ const GPSLocatingAnimation = ({ onComplete, duration = 10000 }: GPSLocatingAnima
 
       const elapsedSeconds = elapsed / 1000;
       
-      if (elapsedSeconds >= 1.5 && !activeSatellites.includes(1)) {
+      if (elapsedSeconds >= 0.8 && !activeSatellites.includes(1)) {
         setActiveSatellites(prev => [...prev, 1]);
         setStatusMessage('GPS signal acquired');
       }
-      if (elapsedSeconds >= 3 && !activeSatellites.includes(2)) {
+      if (elapsedSeconds >= 1.6 && !activeSatellites.includes(2)) {
         setActiveSatellites(prev => [...prev, 2]);
         setStatusMessage('GALILEO signal acquired');
       }
-      if (elapsedSeconds >= 4.5 && !activeSatellites.includes(3)) {
+      if (elapsedSeconds >= 2.4 && !activeSatellites.includes(3)) {
         setActiveSatellites(prev => [...prev, 3]);
         setStatusMessage('GLONASS signal acquired');
       }
-      if (elapsedSeconds >= 6 && !activeSatellites.includes(4)) {
+      if (elapsedSeconds >= 3.2 && !activeSatellites.includes(4)) {
         setActiveSatellites(prev => [...prev, 4]);
         setStatusMessage('BEIDOU signal acquired');
       }
-      if (elapsedSeconds >= 7.5) {
+      if (elapsedSeconds >= 4) {
         setStatusMessage('Computing position...');
       }
-      if (elapsedSeconds >= 8.5) {
+      if (elapsedSeconds >= 4.5) {
         setShowLocation(true);
         setStatusMessage('Location found');
       }
