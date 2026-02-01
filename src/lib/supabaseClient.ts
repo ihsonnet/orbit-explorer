@@ -1,12 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Manual Supabase client using custom secrets
-const supabaseUrl = import.meta.env.VITE_DB_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_DB_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not configured. Database features will not work.');
-}
+// Manual Supabase client
+const supabaseUrl = 'https://lozglxntaxlhbwvkaame.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvemdseG50YXhsaGJ3dmthYW1lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MDEyMDgsImV4cCI6MjA4MzM3NzIwOH0.xqLwL5cv3JoWrvoNNS5qcQAdn6biedupu2ZQqc0h8FU';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
