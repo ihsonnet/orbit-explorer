@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle, Users, Sparkles } from 'lucide-react';
+import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle, Users, Sparkles, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
@@ -17,29 +17,77 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+
+const POSTS_PER_PAGE = 20;
+
+type SortOption = 'newest' | 'oldest' | 'title-asc' | 'title-desc';
 
 const Learn = () => {
   const [selectedCategories, setSelectedCategories] = useState<PostCategory[]>([]);
   const [selectedPost, setSelectedPost] = useState<SpacePost | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const approvedPosts = useMemo(() => getApprovedPosts(), []);
 
-  const filteredPosts = useMemo(() => {
-    if (selectedCategories.length === 0) return approvedPosts;
-    return approvedPosts.filter(post => selectedCategories.includes(post.category));
-  }, [approvedPosts, selectedCategories]);
+  const filteredAndSortedPosts = useMemo(() => {
+    let posts = selectedCategories.length === 0 
+      ? [...approvedPosts] 
+      : approvedPosts.filter(post => selectedCategories.includes(post.category));
 
+    // Sort posts
+    switch (sortBy) {
+      case 'newest':
+        posts.sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime());
+        break;
+      case 'oldest':
+        posts.sort((a, b) => new Date(a.publishedAt || a.createdAt).getTime() - new Date(b.publishedAt || b.createdAt).getTime());
+        break;
+      case 'title-asc':
+        posts.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'title-desc':
+        posts.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+    }
+
+    return posts;
+  }, [approvedPosts, selectedCategories, sortBy]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedPosts.length / POSTS_PER_PAGE);
+  const paginatedPosts = useMemo(() => {
+    const start = (currentPage - 1) * POSTS_PER_PAGE;
+    return filteredAndSortedPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [filteredAndSortedPosts, currentPage]);
+
+  // Reset to page 1 when filters or sort changes
   const handleCategoryChange = (category: PostCategory) => {
     setSelectedCategories(prev =>
       prev.includes(category)
         ? prev.filter(c => c !== category)
         : [...prev, category]
     );
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
     setSelectedCategories([]);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: SortOption) => {
+    setSortBy(value);
+    setCurrentPage(1);
   };
 
   const handleReadMore = (post: SpacePost) => {
@@ -269,35 +317,90 @@ const Learn = () => {
                 />
 
                 {/* Main Content */}
-                <div className="flex-1 space-y-8">
+                <div className="flex-1 space-y-6">
                   {/* Submit Form */}
                   <BlogSubmitForm />
 
-                  {/* Posts Header */}
-                  <div className="flex items-center justify-between">
+                  {/* Posts Header with Sort */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <Sparkles className="w-5 h-5 text-primary" />
                       <h2 className="font-display text-xl font-semibold text-foreground">
                         Community Posts
                       </h2>
+                      <span className="text-sm text-muted-foreground">
+                        ({filteredAndSortedPosts.length})
+                      </span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''}
-                    </span>
+                    
+                    {/* Sort Dropdown */}
+                    <div className="flex items-center gap-2">
+                      <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                      <Select value={sortBy} onValueChange={(v) => handleSortChange(v as SortOption)}>
+                        <SelectTrigger className="w-[160px] h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest First</SelectItem>
+                          <SelectItem value="oldest">Oldest First</SelectItem>
+                          <SelectItem value="title-asc">Title A-Z</SelectItem>
+                          <SelectItem value="title-desc">Title Z-A</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Posts Grid */}
-                  {filteredPosts.length > 0 ? (
-                    <div className="grid gap-4">
-                      {filteredPosts.map((post, index) => (
-                        <BlogPostCard
-                          key={post.id}
-                          post={post}
-                          index={index}
-                          onReadMore={handleReadMore}
-                        />
-                      ))}
-                    </div>
+                  {paginatedPosts.length > 0 ? (
+                    <>
+                      <div className="grid gap-4">
+                        {paginatedPosts.map((post, index) => (
+                          <BlogPostCard
+                            key={post.id}
+                            post={post}
+                            index={index}
+                            onReadMore={handleReadMore}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-6">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "ghost"}
+                                size="sm"
+                                className="w-9 h-9"
+                                onClick={() => setCurrentPage(page)}
+                              >
+                                {page}
+                              </Button>
+                            ))}
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="card-glow rounded-2xl p-12 text-center">
                       <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

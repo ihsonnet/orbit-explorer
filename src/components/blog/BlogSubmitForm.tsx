@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mail, User, FileText, Tag, CheckCircle, Bold, Italic, List, Heading, ChevronDown } from 'lucide-react';
+import { Send, Mail, User, FileText, Tag, CheckCircle, Bold, Italic, List, Heading, ChevronDown, Image } from 'lucide-react';
 import { PostCategory, categoryLabels, categoryGroups, getGravatarUrl } from '@/data/posts/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,11 +15,18 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 const BlogSubmitForm = () => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
+  const [imageData, setImageData] = useState({ url: '', alt: '', width: '' });
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -121,6 +128,36 @@ const BlogSubmitForm = () => {
     }, 0);
   };
 
+  const insertImage = () => {
+    if (!imageData.url) {
+      toast({
+        title: 'Missing URL',
+        description: 'Please enter an image URL.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    const start = textarea?.selectionStart || formData.content.length;
+    
+    // Build markdown image with optional sizing
+    let imgMarkdown = `![${imageData.alt || 'image'}](${imageData.url})`;
+    if (imageData.width) {
+      imgMarkdown = `<img src="${imageData.url}" alt="${imageData.alt || 'image'}" width="${imageData.width}" />`;
+    }
+    
+    const newContent = formData.content.substring(0, start) + '\n' + imgMarkdown + '\n' + formData.content.substring(start);
+    setFormData({ ...formData, content: newContent });
+    setImageData({ url: '', alt: '', width: '' });
+    setImagePopoverOpen(false);
+
+    toast({
+      title: 'Image added',
+      description: 'Image markdown inserted into content.',
+    });
+  };
+
   if (submitted) {
     return (
       <motion.div
@@ -136,9 +173,6 @@ const BlogSubmitForm = () => {
         </h3>
         <p className="text-muted-foreground mb-4">
           Your post is waiting for approval. If approved, it will be published within 2-3 days.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          We'll use your email to display your Gravatar profile photo.
         </p>
         <Button
           variant="outline"
@@ -204,7 +238,7 @@ const BlogSubmitForm = () => {
               <div className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="authorEmail" className="text-sm text-muted-foreground">
-                    Your Email * <span className="text-xs opacity-70">(used for your Gravatar photo)</span>
+                    Your Email *
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -221,7 +255,7 @@ const BlogSubmitForm = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="authorName" className="text-sm text-muted-foreground">
-                    Display Name * <span className="text-xs opacity-70">(how you'll appear)</span>
+                    Display Name *
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -233,9 +267,6 @@ const BlogSubmitForm = () => {
                       className="pl-10 bg-secondary/30 border-border/50"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Note: Gravatar provides your photo from email. Name is entered separately as Gravatar's name API has browser restrictions.
-                  </p>
                 </div>
               </div>
 
@@ -250,7 +281,7 @@ const BlogSubmitForm = () => {
                   </Avatar>
                   <div>
                     <p className="text-sm font-medium text-foreground">{formData.authorName || 'Your Name'}</p>
-                    <p className="text-xs text-muted-foreground">Your profile preview (via Gravatar)</p>
+                    <p className="text-xs text-muted-foreground">Your profile preview</p>
                   </div>
                 </div>
               )}
@@ -299,7 +330,7 @@ const BlogSubmitForm = () => {
               {/* Content with Editor Toolbar */}
               <div className="space-y-2">
                 <Label htmlFor="content" className="text-sm text-muted-foreground">
-                  Content * <span className="text-xs opacity-70">(Markdown supported)</span>
+                  Content *
                 </Label>
                 
                 <div className="flex items-center gap-1 p-1 rounded-t-lg bg-secondary/30 border border-b-0 border-border/50">
@@ -343,6 +374,51 @@ const BlogSubmitForm = () => {
                   >
                     <List className="w-4 h-4" />
                   </Button>
+                  
+                  <div className="w-px h-5 bg-border/50 mx-1" />
+                  
+                  {/* Image Insert */}
+                  <Popover open={imagePopoverOpen} onOpenChange={setImagePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        title="Insert Image"
+                      >
+                        <Image className="w-4 h-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-3" align="start">
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-foreground">Insert Image</p>
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Image URL"
+                            value={imageData.url}
+                            onChange={(e) => setImageData({ ...imageData, url: e.target.value })}
+                            className="h-8 text-sm"
+                          />
+                          <Input
+                            placeholder="Alt text (optional)"
+                            value={imageData.alt}
+                            onChange={(e) => setImageData({ ...imageData, alt: e.target.value })}
+                            className="h-8 text-sm"
+                          />
+                          <Input
+                            placeholder="Width (e.g., 300, 50%)"
+                            value={imageData.width}
+                            onChange={(e) => setImageData({ ...imageData, width: e.target.value })}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <Button size="sm" onClick={insertImage} className="w-full">
+                          Insert
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <Textarea
@@ -383,10 +459,6 @@ const BlogSubmitForm = () => {
                   Submit Post
                 </Button>
               </div>
-
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                Your post will be reviewed before publishing. We'll use your email to fetch your Gravatar profile.
-              </p>
             </div>
           </motion.div>
         )}
