@@ -340,13 +340,13 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                     px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border
                     ${isActive 
                       ? 'shadow-sm' 
-                      : 'opacity-70 hover:opacity-100'
+                      : 'opacity-60 hover:opacity-100'
                     }
                   `}
                   style={{ 
                     borderColor: colors.hex,
                     backgroundColor: isActive ? `${colors.hex}20` : 'transparent',
-                    color: colors.hex
+                    color: isActive ? colors.hex : 'inherit'
                   }}
                 >
                   {orbit.label}
