@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Not Found | S.P.A.C.E. for Everyone</title>
+    <meta name="description" content="Page not found - Lost in S.P.A.C.E.?" />
+    <script>
+      // Redirect to the React app's 404 handling
+      // This preserves the attempted URL for client-side routing
+      sessionStorage.setItem('redirect', window.location.pathname);
+      window.location.replace('/');
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <meta http-equiv="refresh" content="0;url=/" />
+    </noscript>
+  </body>
+</html>
