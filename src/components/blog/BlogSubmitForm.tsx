@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Mail, User, FileText, Tag, Copy, Check } from 'lucide-react';
+import { Send, Mail, User, FileText, Tag, CheckCircle, Bold, Italic, List, Heading } from 'lucide-react';
 import { PostCategory, categoryLabels, categoryGroups, getGravatarUrl } from '@/data/posts/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,11 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 
 const BlogSubmitForm = () => {
   const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    excerpt: '',
     authorEmail: '',
     authorName: '',
     category: '' as PostCategory | '',
@@ -31,6 +30,15 @@ const BlogSubmitForm = () => {
 
   const generatePostId = () => {
     return `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  const generateExcerpt = (content: string) => {
+    // Get first 150 characters, ending at a word boundary
+    const trimmed = content.trim();
+    if (trimmed.length <= 150) return trimmed;
+    const excerpt = trimmed.substring(0, 150);
+    const lastSpace = excerpt.lastIndexOf(' ');
+    return (lastSpace > 100 ? excerpt.substring(0, lastSpace) : excerpt) + '...';
   };
 
   const generateJSON = () => {
@@ -47,7 +55,7 @@ const BlogSubmitForm = () => {
       id: generatePostId(),
       title: formData.title,
       content: formData.content,
-      excerpt: formData.excerpt || formData.content.substring(0, 150) + '...',
+      excerpt: generateExcerpt(formData.content),
       authorEmail: formData.authorEmail,
       authorName: formData.authorName,
       category: formData.category,
@@ -59,34 +67,99 @@ const BlogSubmitForm = () => {
     return JSON.stringify(post, null, 2);
   };
 
-  const handleCopyJSON = () => {
-    const json = generateJSON();
-    if (json) {
-      navigator.clipboard.writeText(json);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast({
-        title: 'JSON Copied!',
-        description: 'Post data copied to clipboard.',
-      });
-    }
-  };
-
-  const handleSubmitEmail = () => {
+  const handleSubmit = () => {
     const json = generateJSON();
     if (json) {
       const subject = encodeURIComponent(`[S.P.A.C.E. Post Submission] ${formData.title}`);
       const body = encodeURIComponent(`New post submission:\n\n${json}`);
       window.location.href = `mailto:ihsonnet@gmail.com?subject=${subject}&body=${body}`;
       
-      toast({
-        title: 'Email client opened',
-        description: 'Send the email to submit your post for review.',
-      });
+      setSubmitted(true);
     }
   };
 
-  const allCategories = Object.values(categoryGroups).flat();
+  const insertFormatting = (format: string) => {
+    const textarea = document.getElementById('content') as HTMLTextAreaElement;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = formData.content.substring(start, end);
+    
+    let newText = '';
+    let cursorOffset = 0;
+
+    switch (format) {
+      case 'bold':
+        newText = `**${selectedText || 'bold text'}**`;
+        cursorOffset = selectedText ? 0 : 2;
+        break;
+      case 'italic':
+        newText = `*${selectedText || 'italic text'}*`;
+        cursorOffset = selectedText ? 0 : 1;
+        break;
+      case 'heading':
+        newText = `## ${selectedText || 'Heading'}`;
+        cursorOffset = selectedText ? 0 : 3;
+        break;
+      case 'list':
+        newText = `\n- ${selectedText || 'List item'}`;
+        cursorOffset = selectedText ? 0 : 3;
+        break;
+      default:
+        return;
+    }
+
+    const newContent = formData.content.substring(0, start) + newText + formData.content.substring(end);
+    setFormData({ ...formData, content: newContent });
+
+    // Restore focus and cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + newText.length - cursorOffset;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  if (submitted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="card-glow rounded-2xl p-8 text-center"
+      >
+        <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-accent" />
+        </div>
+        <h3 className="font-display font-semibold text-xl text-foreground mb-2">
+          Submission Received!
+        </h3>
+        <p className="text-muted-foreground mb-4">
+          Your post is waiting for approval. If approved, it will be published within 2-3 days.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          We'll use your email to display your Gravatar profile photo and name.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-6"
+          onClick={() => {
+            setSubmitted(false);
+            setFormData({
+              title: '',
+              content: '',
+              authorEmail: '',
+              authorName: '',
+              category: '' as PostCategory | '',
+              tags: '',
+            });
+          }}
+        >
+          Submit Another Post
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -125,7 +198,7 @@ const BlogSubmitForm = () => {
 
           <div className="space-y-2">
             <Label htmlFor="authorEmail" className="text-sm text-muted-foreground">
-              Your Email *
+              Your Email * <span className="text-xs opacity-70">(for Gravatar photo)</span>
             </Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -150,7 +223,10 @@ const BlogSubmitForm = () => {
                 {formData.authorName ? formData.authorName.split(' ').map(n => n[0]).join('') : '?'}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-muted-foreground">Your avatar preview (from Gravatar)</span>
+            <div>
+              <p className="text-sm font-medium text-foreground">{formData.authorName || 'Your Name'}</p>
+              <p className="text-xs text-muted-foreground">Your profile preview (via Gravatar)</p>
+            </div>
           </div>
         )}
 
@@ -195,31 +271,62 @@ const BlogSubmitForm = () => {
           </Select>
         </div>
 
-        {/* Excerpt */}
-        <div className="space-y-2">
-          <Label htmlFor="excerpt" className="text-sm text-muted-foreground">
-            Short Excerpt (optional)
-          </Label>
-          <Input
-            id="excerpt"
-            placeholder="A brief summary of your post..."
-            value={formData.excerpt}
-            onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            className="bg-secondary/30 border-border/50"
-          />
-        </div>
-
-        {/* Content */}
+        {/* Content with Editor Toolbar */}
         <div className="space-y-2">
           <Label htmlFor="content" className="text-sm text-muted-foreground">
-            Content * (Markdown supported)
+            Content * <span className="text-xs opacity-70">(Markdown supported)</span>
           </Label>
+          
+          {/* Simple Formatting Toolbar */}
+          <div className="flex items-center gap-1 p-1 rounded-t-lg bg-secondary/30 border border-b-0 border-border/50">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => insertFormatting('bold')}
+              title="Bold"
+            >
+              <Bold className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => insertFormatting('italic')}
+              title="Italic"
+            >
+              <Italic className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => insertFormatting('heading')}
+              title="Heading"
+            >
+              <Heading className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => insertFormatting('list')}
+              title="List"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
+          
           <Textarea
             id="content"
-            placeholder="Write your post content here. You can use **bold** for headers and - for bullet points..."
+            placeholder="Write your post content here..."
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            className="min-h-[150px] bg-secondary/30 border-border/50"
+            className="min-h-[200px] bg-secondary/30 border-border/50 rounded-t-none font-mono text-sm"
           />
         </div>
 
@@ -240,28 +347,21 @@ const BlogSubmitForm = () => {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+        {/* Submit Button */}
+        <div className="pt-4">
           <Button
-            onClick={handleCopyJSON}
-            variant="outline"
-            className="flex-1 gap-2"
-          >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? 'Copied!' : 'Copy JSON'}
-          </Button>
-          <Button
-            onClick={handleSubmitEmail}
+            onClick={handleSubmit}
             variant="hero"
-            className="flex-1 gap-2"
+            className="w-full gap-2"
+            size="lg"
           >
             <Send className="w-4 h-4" />
-            Submit via Email
+            Submit Post
           </Button>
         </div>
 
         <p className="text-xs text-muted-foreground text-center pt-2">
-          Your post will be reviewed before publishing. We'll notify you once approved.
+          Your post will be reviewed before publishing. We'll use your email to fetch your Gravatar profile.
         </p>
       </div>
     </motion.div>
