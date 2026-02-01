@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Loader2, FileText, FolderOpen } from 'lucide-react';
+import { LogOut, Loader2, FileText, FolderOpen, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import AdminPostList from '@/components/admin/AdminPostList';
 import AdminCategoryManager from '@/components/admin/AdminCategoryManager';
+import MaintenanceToggle from '@/components/admin/MaintenanceToggle';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -66,6 +67,10 @@ const AdminDashboard = () => {
               <FolderOpen className="w-4 h-4" />
               Categories
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts">
@@ -74,6 +79,16 @@ const AdminDashboard = () => {
 
           <TabsContent value="categories">
             <AdminCategoryManager />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-display font-semibold text-foreground mb-2">Site Settings</h2>
+                <p className="text-muted-foreground">Manage global site configuration</p>
+              </div>
+              <MaintenanceToggle />
+            </div>
           </TabsContent>
         </Tabs>
       </main>
