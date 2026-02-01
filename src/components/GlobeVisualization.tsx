@@ -132,7 +132,28 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
     }
   }, [satellites, onOperatorsLoaded]);
 
-  // Apply filters with sampling for HTML elements performance
+  const MAX_DISPLAY = 5000;
+
+  // Calculate actual matching count (before any capping)
+  const actualMatchingCount = useMemo(() => {
+    const hasTypeFilter = filters?.types.length > 0;
+    const hasOrbitFilter = filters?.orbitClasses.length > 0;
+    const hasOperatorFilter = filters?.operators.length > 0;
+    const hasAnyFilter = hasTypeFilter || hasOrbitFilter || hasOperatorFilter;
+
+    if (!hasAnyFilter) {
+      return allPoints.length;
+    }
+
+    return allPoints.filter(point => {
+      const matchesType = !hasTypeFilter || filters.types.includes(point.type);
+      const matchesOrbit = !hasOrbitFilter || filters.orbitClasses.includes(point.orbitClass);
+      const matchesOperator = !hasOperatorFilter || filters.operators.includes(point.operator);
+      return matchesType && matchesOrbit && matchesOperator;
+    }).length;
+  }, [allPoints, filters]);
+
+  // Apply filters with capping for display performance
   const filteredPoints = useMemo(() => {
     const hasTypeFilter = filters?.types.length > 0;
     const hasOrbitFilter = filters?.orbitClasses.length > 0;
@@ -159,10 +180,10 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
         }
       });
       
-      return sampledPoints;
+      return sampledPoints.slice(0, MAX_DISPLAY);
     }
 
-    // When filters active, show all matching (up to reasonable limit)
+    // When filters active, show all matching (up to max display limit)
     const filtered = allPoints.filter(point => {
       const matchesType = !hasTypeFilter || filters.types.includes(point.type);
       const matchesOrbit = !hasOrbitFilter || filters.orbitClasses.includes(point.orbitClass);
@@ -170,9 +191,10 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       return matchesType && matchesOrbit && matchesOperator;
     });
     
-    // Cap at 5000 for filtered results to maintain smoothness
-    return filtered.length > 5000 ? filtered.slice(0, 5000) : filtered;
+    return filtered.slice(0, MAX_DISPLAY);
   }, [allPoints, filters]);
+
+  const isDisplayCapped = filteredPoints.length < actualMatchingCount;
 
   // Update satellite screen position when selected
   useEffect(() => {
@@ -283,20 +305,14 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
         {/* Satellite Count */}
         <div className="bg-card/90 backdrop-blur-sm rounded-xl px-4 py-3 border border-border">
           <div className="text-2xl font-display font-bold text-primary">
-            {hasActiveFilters 
-              ? filteredPoints.length.toLocaleString()
-              : allPoints.length.toLocaleString()
-            }
+            {actualMatchingCount.toLocaleString()}
           </div>
           <div className="text-xs text-muted-foreground">
-            {hasActiveFilters 
-              ? `matching satellites` 
-              : 'total satellites'
-            }
+            {hasActiveFilters ? 'matching satellites' : 'total satellites'}
           </div>
-          {!hasActiveFilters && filteredPoints.length < allPoints.length && (
-            <p className="text-[10px] text-muted-foreground/70 mt-1">
-              Showing {filteredPoints.length.toLocaleString()} on globe
+          {isDisplayCapped && (
+            <p className="text-[10px] text-primary/70 mt-1">
+              Showing max {MAX_DISPLAY.toLocaleString()} on globe
             </p>
           )}
           {hasActiveFilters && (
