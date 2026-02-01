@@ -338,15 +338,13 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
                   onClick={() => toggleOrbitClass(orbit.id)}
                   className={`
                     px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border
-                    ${isActive 
-                      ? 'shadow-sm' 
-                      : 'opacity-60 hover:opacity-100'
-                    }
+                    ${isActive ? 'shadow-md' : 'hover:opacity-100'}
                   `}
                   style={{ 
                     borderColor: colors.hex,
-                    backgroundColor: isActive ? `${colors.hex}20` : 'transparent',
-                    color: isActive ? colors.hex : 'inherit'
+                    backgroundColor: isActive ? colors.hex : 'transparent',
+                    color: isActive ? '#000' : colors.hex,
+                    boxShadow: isActive ? `0 0 12px ${colors.hex}60` : 'none'
                   }}
                 >
                   {orbit.label}
