@@ -13,6 +13,7 @@ import { SpacePost, categoryGroups } from '@/data/posts/types';
 import BlogPostCard from '@/components/blog/BlogPostCard';
 import BlogPostModal from '@/components/blog/BlogPostModal';
 import BlogSubmitForm from '@/components/blog/BlogSubmitForm';
+import TopContributors from '@/components/blog/TopContributors';
 
 type SortOption = 'newest' | 'oldest' | 'alphabetical';
 const POSTS_PER_PAGE = 12;
@@ -251,122 +252,134 @@ const Learn = () => {
 
       {/* Content */}
       <main className="flex-1 container mx-auto px-4 py-8">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading posts...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-20">
-            <p className="text-destructive">{error}</p>
-          </div>
-        ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <Users className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-display font-semibold text-lg mb-2">No posts found</h3>
-            <p className="text-muted-foreground mb-6">
-              {searchQuery || selectedCategory
-                ? 'Try adjusting your filters or search query.'
-                : 'Be the first to contribute!'}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* Featured Post */}
-            {featuredPost && currentPage === 1 && (
-              <motion.article
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative bg-gradient-to-br from-primary/5 via-card to-card border border-border/50 rounded-2xl p-6 md:p-8 cursor-pointer group"
-                onClick={() => setSelectedPost(featuredPost)}
-              >
-                <Badge className="mb-4">
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  Featured
-                </Badge>
-                <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                  {featuredPost.title}
-                </h2>
-                <p className="text-muted-foreground mb-4 line-clamp-2 max-w-2xl">
-                  {featuredPost.excerpt}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content */}
+          <div className="flex-1">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Loading posts...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-20">
+                <p className="text-destructive">{error}</p>
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">No posts found</h3>
+                <p className="text-muted-foreground mb-6">
+                  {searchQuery || selectedCategory
+                    ? 'Try adjusting your filters or search query.'
+                    : 'Be the first to contribute!'}
                 </p>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>{featuredPost.authorName}</span>
-                  <span>•</span>
-                  <span>{new Date(featuredPost.createdAt).toLocaleDateString()}</span>
-                </div>
-              </motion.article>
-            )}
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Featured Post */}
+                {featuredPost && currentPage === 1 && (
+                  <motion.article
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative bg-gradient-to-br from-primary/5 via-card to-card border border-border/50 rounded-2xl p-6 md:p-8 cursor-pointer group"
+                    onClick={() => setSelectedPost(featuredPost)}
+                  >
+                    <Badge className="mb-4">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Featured
+                    </Badge>
+                    <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
+                      {featuredPost.title}
+                    </h2>
+                    <p className="text-muted-foreground mb-4 line-clamp-2 max-w-2xl">
+                      {featuredPost.excerpt}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{featuredPost.authorName}</span>
+                      <span>•</span>
+                      <span>{new Date(featuredPost.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </motion.article>
+                )}
 
-            {/* Posts Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayPosts.map((post, index) => (
-                <BlogPostCard
-                  key={post.id}
-                  post={post}
-                  index={index}
-                  onReadMore={setSelectedPost}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "ghost"}
-                        size="sm"
-                        className="w-9 h-9"
-                        onClick={() => setCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
+                {/* Posts Grid */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {displayPosts.map((post, index) => (
+                    <BlogPostCard
+                      key={post.id}
+                      post={post}
+                      index={index}
+                      onReadMore={setSelectedPost}
+                    />
+                  ))}
                 </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "ghost"}
+                            size="sm"
+                            className="w-9 h-9"
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Results Count */}
+                <p className="text-center text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * POSTS_PER_PAGE) + 1}-{Math.min(currentPage * POSTS_PER_PAGE, filteredPosts.length)} of {filteredPosts.length} posts
+                </p>
               </div>
             )}
-
-            {/* Results Count */}
-            <p className="text-center text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * POSTS_PER_PAGE) + 1}-{Math.min(currentPage * POSTS_PER_PAGE, filteredPosts.length)} of {filteredPosts.length} posts
-            </p>
           </div>
-        )}
+
+          {/* Sidebar */}
+          <aside className="lg:w-80 shrink-0">
+            <div className="sticky top-32 space-y-6">
+              <TopContributors />
+            </div>
+          </aside>
+        </div>
 
         {/* Submit Form */}
         <div className="mt-16">
