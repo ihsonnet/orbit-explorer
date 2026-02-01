@@ -8,7 +8,7 @@ const navItems = [
   { path: '/sky-above-me', label: 'Sky Above Me', icon: Satellite },
   { path: '/my-day', label: 'My Day & Space', icon: Calendar },
   { path: '/global', label: 'Global View', icon: Globe },
-  { path: '/learn', label: 'Learn', icon: BookOpen },
+  { path: '/learn', label: 'Learn & Share', icon: BookOpen },
 ];
 
 const Navigation = () => {
