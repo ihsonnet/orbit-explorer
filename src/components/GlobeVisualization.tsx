@@ -282,13 +282,23 @@ const GlobeVisualization = ({ filters, onFiltersChange, onOperatorsLoaded }: Glo
       >
         {/* Satellite Count */}
         <div className="bg-card/90 backdrop-blur-sm rounded-xl px-4 py-3 border border-border">
-          <div className="text-2xl font-display font-bold text-primary">{filteredPoints.length.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">
-            of {allPoints.length.toLocaleString()} satellites
-            {!hasActiveFilters && filteredPoints.length < allPoints.length && (
-              <span className="text-primary/70"> (sampled)</span>
-            )}
+          <div className="text-2xl font-display font-bold text-primary">
+            {hasActiveFilters 
+              ? filteredPoints.length.toLocaleString()
+              : allPoints.length.toLocaleString()
+            }
           </div>
+          <div className="text-xs text-muted-foreground">
+            {hasActiveFilters 
+              ? `matching satellites` 
+              : 'total satellites'
+            }
+          </div>
+          {!hasActiveFilters && filteredPoints.length < allPoints.length && (
+            <p className="text-[10px] text-muted-foreground/70 mt-1">
+              Showing {filteredPoints.length.toLocaleString()} on globe
+            </p>
+          )}
           {hasActiveFilters && (
             <button 
               onClick={clearAllFilters}
