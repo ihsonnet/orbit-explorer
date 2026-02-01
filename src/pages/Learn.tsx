@@ -1,16 +1,52 @@
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle } from 'lucide-react';
+import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle, Users, Sparkles } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
+import BlogSidebar from '@/components/blog/BlogSidebar';
+import BlogPostCard from '@/components/blog/BlogPostCard';
+import BlogPostModal from '@/components/blog/BlogPostModal';
+import BlogSubmitForm from '@/components/blog/BlogSubmitForm';
+import { getApprovedPosts } from '@/data/posts';
+import { PostCategory, SpacePost } from '@/data/posts/types';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Learn = () => {
+  const [selectedCategories, setSelectedCategories] = useState<PostCategory[]>([]);
+  const [selectedPost, setSelectedPost] = useState<SpacePost | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const approvedPosts = useMemo(() => getApprovedPosts(), []);
+
+  const filteredPosts = useMemo(() => {
+    if (selectedCategories.length === 0) return approvedPosts;
+    return approvedPosts.filter(post => selectedCategories.includes(post.category));
+  }, [approvedPosts, selectedCategories]);
+
+  const handleCategoryChange = (category: PostCategory) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategories([]);
+  };
+
+  const handleReadMore = (post: SpacePost) => {
+    setSelectedPost(post);
+    setIsModalOpen(true);
+  };
+
   const topics = [
     {
       icon: Satellite,
@@ -97,119 +133,199 @@ const Learn = () => {
       <Navigation />
 
       <main className="flex-1 pt-28 pb-20 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-full px-4 py-1.5 mb-6">
-              <BookOpen className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400 font-medium">Educational Content</span>
+            <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-full px-4 py-1.5 mb-6">
+              <BookOpen className="w-4 h-4 text-accent" />
+              <span className="text-sm text-accent font-medium">Learn & Share</span>
             </div>
             
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
-              <span className="gradient-text">Learn About Space</span>
+              <span className="gradient-text">S.P.A.C.E. Knowledge Hub</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Understanding the fundamentals of satellites, orbits, and space technology. 
-              Knowledge that helps you appreciate the invisible infrastructure above.
+              Discover the fundamentals of space technology and share your own insights with our community.
             </p>
           </motion.div>
 
-          {/* Topics */}
-          <div className="space-y-6 mb-16">
-            {topics.map((topic, index) => (
+          {/* Tabs for Education vs Community */}
+          <Tabs defaultValue="community" className="w-full">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+              <TabsTrigger value="education" className="gap-2">
+                <BookOpen className="w-4 h-4" />
+                Learn
+              </TabsTrigger>
+              <TabsTrigger value="community" className="gap-2">
+                <Users className="w-4 h-4" />
+                Your S.P.A.C.E.
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Education Tab */}
+            <TabsContent value="education" className="space-y-8">
+              {/* Topics */}
+              <div className="space-y-6">
+                {topics.map((topic, index) => (
+                  <motion.div
+                    key={topic.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="card-glow rounded-2xl p-6"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <topic.icon className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="font-display text-xl font-semibold mb-3 text-foreground">
+                          {topic.title}
+                        </h2>
+                        <div className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed">
+                          {topic.content}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* FAQs */}
               <motion.div
-                key={topic.title}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <HelpCircle className="w-6 h-6 text-accent" />
+                  <h2 className="font-display text-2xl font-bold text-foreground">
+                    Frequently Asked Questions
+                  </h2>
+                </div>
+
+                <Accordion type="single" collapsible className="space-y-3">
+                  {faqs.map((faq, index) => (
+                    <AccordionItem
+                      key={index}
+                      value={`faq-${index}`}
+                      className="card-glow rounded-xl border-none"
+                    >
+                      <AccordionTrigger className="px-5 py-4 hover:no-underline text-left font-display font-medium text-foreground">
+                        {faq.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="px-5 pb-4 text-muted-foreground">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </motion.div>
+
+              {/* Resources */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 className="card-glow rounded-2xl p-6"
               >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <topic.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-display text-xl font-semibold mb-3 text-foreground">
-                      {topic.title}
-                    </h2>
-                    <div className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed">
-                      {topic.content}
-                    </div>
-                  </div>
+                <h3 className="font-display text-lg font-semibold mb-4 text-foreground">
+                  Explore Further
+                </h3>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {[
+                    { name: 'NASA Open Data', url: 'https://data.nasa.gov' },
+                    { name: 'SpaceX Launches', url: 'https://www.spacex.com/launches' },
+                    { name: 'ESA Earth Observation', url: 'https://www.esa.int/Applications/Observing_the_Earth' },
+                    { name: 'Celestrak Satellite Catalog', url: 'https://celestrak.org' },
+                  ].map((resource) => (
+                    <a
+                      key={resource.name}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                    >
+                      <Globe className="w-5 h-5 text-primary" />
+                      <span className="text-sm text-foreground">{resource.name}</span>
+                    </a>
+                  ))}
                 </div>
               </motion.div>
-            ))}
-          </div>
+            </TabsContent>
 
-          {/* FAQs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <HelpCircle className="w-6 h-6 text-accent" />
-              <h2 className="font-display text-2xl font-bold text-foreground">
-                Frequently Asked Questions
-              </h2>
-            </div>
+            {/* Community Blog Tab */}
+            <TabsContent value="community">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Sidebar */}
+                <BlogSidebar
+                  selectedCategories={selectedCategories}
+                  onCategoryChange={handleCategoryChange}
+                  onClearFilters={handleClearFilters}
+                />
 
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, index) => (
-                <AccordionItem
-                  key={index}
-                  value={`faq-${index}`}
-                  className="card-glow rounded-xl border-none"
-                >
-                  <AccordionTrigger className="px-5 py-4 hover:no-underline text-left font-display font-medium text-foreground">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="px-5 pb-4 text-muted-foreground">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </motion.div>
+                {/* Main Content */}
+                <div className="flex-1 space-y-8">
+                  {/* Submit Form */}
+                  <BlogSubmitForm />
 
-          {/* Resources */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 card-glow rounded-2xl p-6"
-          >
-            <h3 className="font-display text-lg font-semibold mb-4 text-foreground">
-              Explore Further
-            </h3>
-            <div className="grid md:grid-cols-2 gap-3">
-              {[
-                { name: 'NASA Open Data', url: 'https://data.nasa.gov' },
-                { name: 'SpaceX Launches', url: 'https://www.spacex.com/launches' },
-                { name: 'ESA Earth Observation', url: 'https://www.esa.int/Applications/Observing_the_Earth' },
-                { name: 'Celestrak Satellite Catalog', url: 'https://celestrak.org' },
-              ].map((resource) => (
-                <a
-                  key={resource.name}
-                  href={resource.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                >
-                  <Globe className="w-5 h-5 text-primary" />
-                  <span className="text-sm text-foreground">{resource.name}</span>
-                </a>
-              ))}
-            </div>
-          </motion.div>
+                  {/* Posts Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      <h2 className="font-display text-xl font-semibold text-foreground">
+                        Community Posts
+                      </h2>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  {/* Posts Grid */}
+                  {filteredPosts.length > 0 ? (
+                    <div className="grid gap-4">
+                      {filteredPosts.map((post, index) => (
+                        <BlogPostCard
+                          key={post.id}
+                          post={post}
+                          index={index}
+                          onReadMore={handleReadMore}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="card-glow rounded-2xl p-12 text-center">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="font-display text-lg font-semibold text-foreground mb-2">
+                        No posts found
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {selectedCategories.length > 0
+                          ? 'Try adjusting your filters or be the first to post in this category!'
+                          : 'Be the first to share your space knowledge!'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
       <Footer />
+
+      {/* Post Modal */}
+      <BlogPostModal
+        post={selectedPost}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };
