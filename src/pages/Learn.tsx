@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle, Users, Sparkles, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle, Users, Sparkles, ArrowUpDown, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
@@ -8,7 +8,7 @@ import BlogSidebar from '@/components/blog/BlogSidebar';
 import BlogPostCard from '@/components/blog/BlogPostCard';
 import BlogPostModal from '@/components/blog/BlogPostModal';
 import BlogSubmitForm from '@/components/blog/BlogSubmitForm';
-import { getApprovedPosts } from '@/data/posts';
+import { usePosts } from '@/hooks/usePosts';
 import { PostCategory, SpacePost } from '@/data/posts/types';
 import {
   Accordion,
@@ -37,7 +37,7 @@ const Learn = () => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const approvedPosts = useMemo(() => getApprovedPosts(), []);
+  const { posts: approvedPosts, loading: postsLoading } = usePosts();
 
   const filteredAndSortedPosts = useMemo(() => {
     let posts = selectedCategories.length === 0 
@@ -351,7 +351,11 @@ const Learn = () => {
                   </div>
 
                   {/* Posts Grid */}
-                  {paginatedPosts.length > 0 ? (
+                  {postsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                  ) : paginatedPosts.length > 0 ? (
                     <>
                       <div className="grid gap-4">
                         {paginatedPosts.map((post, index) => (

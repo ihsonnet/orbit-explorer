@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Send, User, Mail } from 'lucide-react';
+import { MessageCircle, Send, User, Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,31 +8,24 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getGravatarUrl } from '@/data/posts/types';
 import { useToast } from '@/hooks/use-toast';
-
-interface Comment {
-  id: string;
-  name: string;
-  email: string;
-  content: string;
-  createdAt: string;
-}
+import { useComments } from '@/hooks/useComments';
 
 interface CommentSectionProps {
   postId: string;
-  comments?: Comment[];
 }
 
-const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
+const CommentSection = ({ postId }: CommentSectionProps) => {
   const { toast } = useToast();
+  const { comments, loading, addComment } = useComments(postId);
   const [showForm, setShowForm] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     content: '',
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.email || !formData.content) {
       toast({
         title: 'Missing fields',
@@ -42,21 +35,23 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
       return;
     }
 
-    // Generate comment JSON and open mailto
-    const comment = {
-      postId,
-      name: formData.name,
-      email: formData.email,
-      content: formData.content,
-      createdAt: new Date().toISOString(),
-    };
-
-    const subject = encodeURIComponent(`[S.P.A.C.E. Comment] on post ${postId}`);
-    const body = encodeURIComponent(`New comment submission:\\n\\n${JSON.stringify(comment, null, 2)}`);
-    window.location.href = `mailto:ihsonnet@gmail.com?subject=${subject}&body=${body}`;
-
-    setSubmitted(true);
-    setFormData({ name: '', email: '', content: '' });
+    setSubmitting(true);
+    try {
+      await addComment(formData.name, formData.email, formData.content);
+      toast({
+        title: 'Comment added!',
+        description: 'Your comment has been posted.',
+      });
+      setFormData({ name: '', email: '', content: '' });
+      setShowForm(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add comment',
+        variant: 'destructive',
+      });
+    }
+    setSubmitting(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -74,7 +69,7 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
           <MessageCircle className="w-4 h-4" />
           Comments {comments.length > 0 && `(${comments.length})`}
         </h4>
-        {!showForm && !submitted && (
+        {!showForm && (
           <Button
             variant="outline"
             size="sm"
@@ -85,8 +80,15 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
         )}
       </div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
       {/* Existing Comments */}
-      {comments.length > 0 && (
+      {!loading && comments.length > 0 && (
         <div className="space-y-3">
           {comments.map((comment) => (
             <div key={comment.id} className="p-3 rounded-lg bg-secondary/20">
@@ -111,7 +113,7 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
       )}
 
       {/* No comments message */}
-      {comments.length === 0 && !showForm && !submitted && (
+      {!loading && comments.length === 0 && !showForm && (
         <p className="text-sm text-muted-foreground text-center py-4">
           No comments yet. Be the first to share your thoughts!
         </p>
@@ -192,6 +194,7 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowForm(false)}
+                  disabled={submitting}
                 >
                   Cancel
                 </Button>
@@ -199,40 +202,20 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
                   size="sm"
                   onClick={handleSubmit}
                   className="gap-1"
+                  disabled={submitting}
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  Submit
+                  {submitting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5" />
+                  )}
+                  {submitting ? 'Posting...' : 'Submit'}
                 </Button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Submitted Message */}
-      {submitted && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="p-4 rounded-lg bg-accent/10 text-center"
-        >
-          <p className="text-sm text-foreground font-medium">Comment submitted!</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            It will appear after approval (within 2-3 days).
-          </p>
-          <Button
-            variant="link"
-            size="sm"
-            className="mt-2"
-            onClick={() => {
-              setSubmitted(false);
-              setShowForm(true);
-            }}
-          >
-            Add another comment
-          </Button>
-        </motion.div>
-      )}
     </div>
   );
 };
