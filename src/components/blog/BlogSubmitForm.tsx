@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Mail, User, FileText, Tag, CheckCircle, Bold, Italic, List, Heading, ChevronDown, Image } from 'lucide-react';
+import { Send, Mail, User, FileText, Tag, CheckCircle, Bold, Italic, List, Heading, ChevronDown, Image, Loader2 } from 'lucide-react';
 import { PostCategory, categoryLabels, categoryGroups, getGravatarUrl } from '@/data/posts/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabaseClient';
 import {
   Popover,
   PopoverContent,
@@ -27,6 +28,7 @@ const BlogSubmitForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [imagePopoverOpen, setImagePopoverOpen] = useState(false);
   const [imageData, setImageData] = useState({ url: '', alt: '', width: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -36,10 +38,6 @@ const BlogSubmitForm = () => {
     tags: '',
   });
 
-  const generatePostId = () => {
-    return `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  };
-
   const generateExcerpt = (content: string) => {
     const trimmed = content.trim();
     if (trimmed.length <= 150) return trimmed;
@@ -48,42 +46,42 @@ const BlogSubmitForm = () => {
     return (lastSpace > 100 ? excerpt.substring(0, lastSpace) : excerpt) + '...';
   };
 
-  const generateJSON = () => {
+  const handleSubmit = async () => {
     if (!formData.title || !formData.content || !formData.authorEmail || !formData.authorName || !formData.category) {
       toast({
         title: 'Missing fields',
         description: 'Please fill in all required fields.',
         variant: 'destructive',
       });
-      return null;
+      return;
     }
 
-    const post = {
-      id: generatePostId(),
+    setIsSubmitting(true);
+
+    const { error } = await supabase.from('post_submissions').insert({
       title: formData.title,
       content: formData.content,
       excerpt: generateExcerpt(formData.content),
-      authorEmail: formData.authorEmail,
-      authorName: formData.authorName,
+      author_email: formData.authorEmail,
+      author_name: formData.authorName,
       category: formData.category,
       tags: formData.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
-      status: 'pending' as const,
-      createdAt: new Date().toISOString(),
-    };
+      status: 'pending',
+    });
 
-    return JSON.stringify(post, null, 2);
-  };
+    setIsSubmitting(false);
 
-  const handleSubmit = () => {
-    const json = generateJSON();
-    if (json) {
-      const subject = encodeURIComponent(`[S.P.A.C.E. Post Submission] ${formData.title}`);
-      const body = encodeURIComponent(`New post submission:\n\n${json}`);
-      window.location.href = `mailto:ihsonnet@gmail.com?subject=${subject}&body=${body}`;
-      
-      setSubmitted(true);
-      setIsExpanded(false);
+    if (error) {
+      toast({
+        title: 'Submission failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
     }
+
+    setSubmitted(true);
+    setIsExpanded(false);
   };
 
   const insertFormatting = (format: string) => {
@@ -454,9 +452,14 @@ const BlogSubmitForm = () => {
                   variant="hero"
                   className="w-full gap-2"
                   size="lg"
+                  disabled={isSubmitting}
                 >
-                  <Send className="w-4 h-4" />
-                  Submit Post
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {isSubmitting ? 'Submitting...' : 'Submit Post'}
                 </Button>
               </div>
             </div>

@@ -9,6 +9,8 @@ import MyDay from "./pages/MyDay";
 import Global from "./pages/Global";
 import Learn from "./pages/Learn";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/my-day" element={<MyDay />} />
           <Route path="/global" element={<Global />} />
           <Route path="/learn" element={<Learn />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
