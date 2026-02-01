@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import CommentSection from './CommentSection';
 
 interface BlogPostModalProps {
@@ -112,9 +111,9 @@ const BlogPostModal = ({ post, isOpen, onClose }: BlogPostModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 bg-background/95 backdrop-blur-xl border-border/50 flex flex-col">
-        <ScrollArea className="flex-1 max-h-[90vh]">
-          <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-2xl max-h-[85vh] p-0 bg-background/95 backdrop-blur-xl border-border/50 overflow-hidden">
+        <div className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="p-6 pb-0 sticky top-0 bg-background/95 backdrop-blur-xl z-10">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <Badge variant="secondary" className="bg-primary/10 text-primary text-xs mb-3">
@@ -162,7 +161,7 @@ const BlogPostModal = ({ post, isOpen, onClose }: BlogPostModalProps) => {
             {/* Comments Section */}
             <CommentSection postId={post.id} comments={post.comments} />
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
