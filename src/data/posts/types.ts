@@ -15,6 +15,14 @@ export type PostCategory =
 
 export type PostStatus = 'pending' | 'approved' | 'rejected';
 
+export interface Comment {
+  id: string;
+  name: string;
+  email: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface SpacePost {
   id: string;
   title: string;
@@ -27,6 +35,7 @@ export interface SpacePost {
   status: PostStatus;
   createdAt: string;
   publishedAt?: string;
+  comments?: Comment[];
 }
 
 export const categoryLabels: Record<PostCategory, string> = {
