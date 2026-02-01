@@ -159,7 +159,7 @@ const BlogPostModal = ({ post, isOpen, onClose }: BlogPostModalProps) => {
             </div>
 
             {/* Comments Section */}
-            <CommentSection postId={post.id} comments={post.comments} />
+            <CommentSection postId={post.id} />
           </div>
         </div>
       </DialogContent>
