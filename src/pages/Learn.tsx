@@ -1,87 +1,83 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { BookOpen, Rocket, Satellite, Globe, Shield, HelpCircle, Users, Sparkles, ArrowUpDown, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, SortAsc, BookOpen, Loader2, ChevronDown, Users, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import SpaceBackground from '@/components/SpaceBackground';
-import BlogSidebar from '@/components/blog/BlogSidebar';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePosts } from '@/hooks/usePosts';
+import { useCategories } from '@/hooks/useCategories';
+import { SpacePost, categoryGroups } from '@/data/posts/types';
 import BlogPostCard from '@/components/blog/BlogPostCard';
 import BlogPostModal from '@/components/blog/BlogPostModal';
 import BlogSubmitForm from '@/components/blog/BlogSubmitForm';
-import { usePosts } from '@/hooks/usePosts';
-import { PostCategory, SpacePost } from '@/data/posts/types';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 
-const POSTS_PER_PAGE = 20;
-
-type SortOption = 'newest' | 'oldest' | 'title-asc' | 'title-desc';
+type SortOption = 'newest' | 'oldest' | 'alphabetical';
+const POSTS_PER_PAGE = 12;
 
 const Learn = () => {
-  const [selectedCategories, setSelectedCategories] = useState<PostCategory[]>([]);
+  const { posts, loading, error } = usePosts();
+  const { categories } = useCategories();
   const [selectedPost, setSelectedPost] = useState<SpacePost | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { posts: approvedPosts, loading: postsLoading } = usePosts();
+  // Filter and sort posts
+  const filteredPosts = useMemo(() => {
+    let result = [...posts];
 
-  const filteredAndSortedPosts = useMemo(() => {
-    let posts = selectedCategories.length === 0 
-      ? [...approvedPosts] 
-      : approvedPosts.filter(post => selectedCategories.includes(post.category));
-
-    // Sort posts
-    switch (sortBy) {
-      case 'newest':
-        posts.sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime());
-        break;
-      case 'oldest':
-        posts.sort((a, b) => new Date(a.publishedAt || a.createdAt).getTime() - new Date(b.publishedAt || b.createdAt).getTime());
-        break;
-      case 'title-asc':
-        posts.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'title-desc':
-        posts.sort((a, b) => b.title.localeCompare(a.title));
-        break;
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (post) =>
+          post.title.toLowerCase().includes(query) ||
+          post.excerpt.toLowerCase().includes(query) ||
+          post.authorName.toLowerCase().includes(query) ||
+          post.tags.some((tag) => tag.toLowerCase().includes(query))
+      );
     }
 
-    return posts;
-  }, [approvedPosts, selectedCategories, sortBy]);
+    // Category filter
+    if (selectedCategory) {
+      result = result.filter((post) => post.category === selectedCategory);
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'oldest':
+        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case 'alphabetical':
+        result.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      default:
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return result;
+  }, [posts, searchQuery, selectedCategory, sortBy]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredAndSortedPosts.length / POSTS_PER_PAGE);
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
   const paginatedPosts = useMemo(() => {
     const start = (currentPage - 1) * POSTS_PER_PAGE;
-    return filteredAndSortedPosts.slice(start, start + POSTS_PER_PAGE);
-  }, [filteredAndSortedPosts, currentPage]);
+    return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [filteredPosts, currentPage]);
 
-  // Reset to page 1 when filters or sort changes
-  const handleCategoryChange = (category: PostCategory) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
+  // Reset page when filters change
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value === 'all' ? null : value);
     setCurrentPage(1);
   };
 
-  const handleClearFilters = () => {
-    setSelectedCategories([]);
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
     setCurrentPage(1);
   };
 
@@ -90,349 +86,302 @@ const Learn = () => {
     setCurrentPage(1);
   };
 
-  const handleReadMore = (post: SpacePost) => {
-    setSelectedPost(post);
-    setIsModalOpen(true);
-  };
-
-  const topics = [
-    {
-      icon: Satellite,
-      title: 'What is an Orbit?',
-      content: `An orbit is the curved path an object takes around another object due to gravity. Satellites orbit Earth at different altitudes and speeds depending on their purpose.
-
-**Key Orbit Types:**
-- **LEO (Low Earth Orbit)**: 160-2,000 km - Fast orbits (~90 min), used for imaging and internet
-- **MEO (Medium Earth Orbit)**: 2,000-35,786 km - Navigation satellites like GPS
-- **GEO (Geostationary)**: 35,786 km - Stays above one point, used for TV and weather
-- **HEO (Highly Elliptical)**: Varies - Long coverage periods over specific regions`,
-    },
-    {
-      icon: Globe,
-      title: 'How Does GPS Work?',
-      content: `GPS (Global Positioning System) uses a constellation of at least 24 satellites orbiting at about 20,200 km altitude.
-
-**The Process:**
-1. Each GPS satellite continuously broadcasts its position and precise time
-2. Your device receives signals from at least 4 satellites
-3. By measuring the time each signal took to arrive, your device calculates distances
-4. Using trilateration, it determines your exact position
-
-**Fun Fact:** GPS satellites carry atomic clocks accurate to nanoseconds. Without Einstein's relativity corrections, GPS would drift by ~10 km per day!`,
-    },
-    {
-      icon: Rocket,
-      title: 'How Do Satellites Get to Space?',
-      content: `Satellites reach orbit using powerful rockets that accelerate them to orbital velocity (~7.8 km/s for LEO).
-
-**Launch Process:**
-1. **Vertical Launch**: Rocket lifts off and climbs through the atmosphere
-2. **Gravity Turn**: Vehicle pitches over to gain horizontal speed
-3. **Stage Separation**: Spent stages are dropped to reduce weight
-4. **Orbital Insertion**: Final burn places satellite in target orbit
-5. **Deployment**: Solar panels unfold, instruments activate
-
-**Major Launch Providers:** SpaceX (Falcon 9), ULA (Atlas V), Arianespace (Ariane 6), ISRO (PSLV)`,
-    },
-    {
-      icon: Shield,
-      title: 'Space Debris & Sustainability',
-      content: `Over 36,000 tracked objects larger than 10cm orbit Earth, including defunct satellites and rocket stages.
-
-**The Challenge:**
-- Debris travels at ~7.5 km/s - even a paint fleck can damage spacecraft
-- Collisions create more debris (Kessler Syndrome risk)
-- ISS regularly maneuvers to avoid debris
-
-**Solutions Being Developed:**
-- Active debris removal missions
-- Satellite deorbit requirements
-- Debris tracking improvements
-- "Design for demise" - satellites that burn up completely`,
-    },
-  ];
-
-  const faqs = [
-    {
-      q: 'Can I see satellites from Earth?',
-      a: 'Yes! Many satellites are visible to the naked eye, especially during dawn and dusk when they catch sunlight against the dark sky. The ISS is one of the brightest objects and makes regular passes over most locations.',
-    },
-    {
-      q: 'How many satellites does SpaceX have?',
-      a: 'SpaceX operates the Starlink constellation with over 5,000 satellites as of 2024, making it the largest satellite constellation ever. They aim to deploy up to 42,000 satellites for global internet coverage.',
-    },
-    {
-      q: 'Do satellites ever collide?',
-      a: 'Yes, though rarely. The most notable collision was in 2009 between Iridium 33 and Cosmos 2251, creating over 2,000 debris pieces. Space agencies now carefully track objects and plan avoidance maneuvers.',
-    },
-    {
-      q: 'How long do satellites last?',
-      a: 'Typical operational lifetimes range from 5-15 years depending on the orbit and mission. LEO satellites face more atmospheric drag and degrade faster than GEO satellites.',
-    },
-    {
-      q: 'Who regulates space?',
-      a: 'The UN Outer Space Treaty (1967) provides the framework, but nations regulate their own launches. The ITU coordinates radio frequencies, and various agencies track debris.',
-    },
-  ];
+  // Featured post (most recent)
+  const featuredPost = !searchQuery && !selectedCategory ? filteredPosts[0] : null;
+  const displayPosts = featuredPost ? paginatedPosts.filter(p => p.id !== featuredPost.id) : paginatedPosts;
 
   return (
-    <div className="min-h-screen relative flex flex-col">
-      <SpaceBackground />
+    <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
 
-      <main className="flex-1 pt-28 pb-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
+      {/* Hero Section */}
+      <section className="relative pt-24 pb-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="container mx-auto px-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="max-w-2xl mx-auto text-center"
           >
-            <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-full px-4 py-1.5 mb-6">
-              <BookOpen className="w-4 h-4 text-accent" />
-              <span className="text-sm text-accent font-medium">Learn & Share</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+              <BookOpen className="w-4 h-4" />
+              Community Knowledge
             </div>
-            
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
-              <span className="gradient-text">S.P.A.C.E. Knowledge Hub</span>
+            <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4 tracking-tight">
+              Your S.P.A.C.E.
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Discover the fundamentals of space technology and share your own insights with our community.
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Explore community insights on satellites, orbits, and space technology.
+              Share your knowledge with fellow enthusiasts.
             </p>
           </motion.div>
+        </div>
+      </section>
 
-          {/* Tabs for Education vs Community */}
-          <Tabs defaultValue="community" className="w-full">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
-              <TabsTrigger value="education" className="gap-2">
-                <BookOpen className="w-4 h-4" />
-                Learn
-              </TabsTrigger>
-              <TabsTrigger value="community" className="gap-2">
-                <Users className="w-4 h-4" />
-                Your S.P.A.C.E.
-              </TabsTrigger>
-            </TabsList>
+      {/* Search & Filters */}
+      <section className="border-y border-border/50 bg-card/30 backdrop-blur-sm sticky top-16 z-40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            {/* Search */}
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search posts, authors, or tags..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10 bg-background/50"
+              />
+            </div>
 
-            {/* Education Tab */}
-            <TabsContent value="education" className="space-y-8">
-              {/* Topics */}
-              <div className="space-y-6">
-                {topics.map((topic, index) => (
-                  <motion.div
-                    key={topic.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="card-glow rounded-2xl p-6"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <topic.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <h2 className="font-display text-xl font-semibold mb-3 text-foreground">
-                          {topic.title}
-                        </h2>
-                        <div className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed">
-                          {topic.content}
-                        </div>
-                      </div>
+            {/* Filter Toggle (Mobile) */}
+            <Button
+              variant="outline"
+              className="md:hidden w-full"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+              <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            </Button>
+
+            {/* Desktop Filters */}
+            <div className="hidden md:flex items-center gap-3">
+              <Select value={selectedCategory || 'all'} onValueChange={handleCategoryChange}>
+                <SelectTrigger className="w-48 bg-background/50">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {Object.entries(categoryGroups).map(([group, cats]) => (
+                    <div key={group}>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{group}</div>
+                      {cats.map((cat) => {
+                        const category = categories.find(c => c.slug === cat);
+                        return (
+                          <SelectItem key={cat} value={cat}>
+                            {category?.name || cat}
+                          </SelectItem>
+                        );
+                      })}
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* FAQs */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <HelpCircle className="w-6 h-6 text-accent" />
-                  <h2 className="font-display text-2xl font-bold text-foreground">
-                    Frequently Asked Questions
-                  </h2>
-                </div>
-
-                <Accordion type="single" collapsible className="space-y-3">
-                  {faqs.map((faq, index) => (
-                    <AccordionItem
-                      key={index}
-                      value={`faq-${index}`}
-                      className="card-glow rounded-xl border-none"
-                    >
-                      <AccordionTrigger className="px-5 py-4 hover:no-underline text-left font-display font-medium text-foreground">
-                        {faq.q}
-                      </AccordionTrigger>
-                      <AccordionContent className="px-5 pb-4 text-muted-foreground">
-                        {faq.a}
-                      </AccordionContent>
-                    </AccordionItem>
                   ))}
-                </Accordion>
-              </motion.div>
+                </SelectContent>
+              </Select>
 
-              {/* Resources */}
+              <Select value={sortBy} onValueChange={(v) => handleSortChange(v as SortOption)}>
+                <SelectTrigger className="w-36 bg-background/50">
+                  <SortAsc className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                  <SelectItem value="alphabetical">A-Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Mobile Filters Panel */}
+          <AnimatePresence>
+            {showFilters && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="card-glow rounded-2xl p-6"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="md:hidden overflow-hidden"
               >
-                <h3 className="font-display text-lg font-semibold mb-4 text-foreground">
-                  Explore Further
-                </h3>
-                <div className="grid md:grid-cols-2 gap-3">
-                  {[
-                    { name: 'NASA Open Data', url: 'https://data.nasa.gov' },
-                    { name: 'SpaceX Launches', url: 'https://www.spacex.com/launches' },
-                    { name: 'ESA Earth Observation', url: 'https://www.esa.int/Applications/Observing_the_Earth' },
-                    { name: 'Celestrak Satellite Catalog', url: 'https://celestrak.org' },
-                  ].map((resource) => (
-                    <a
-                      key={resource.name}
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                    >
-                      <Globe className="w-5 h-5 text-primary" />
-                      <span className="text-sm text-foreground">{resource.name}</span>
-                    </a>
-                  ))}
+                <div className="pt-4 flex flex-col gap-3">
+                  <Select value={selectedCategory || 'all'} onValueChange={handleCategoryChange}>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.slug} value={cat.slug}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={sortBy} onValueChange={(v) => handleSortChange(v as SortOption)}>
+                    <SelectTrigger className="bg-background/50">
+                      <SortAsc className="w-4 h-4 mr-2" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="oldest">Oldest</SelectItem>
+                      <SelectItem value="alphabetical">A-Z</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </motion.div>
-            </TabsContent>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
 
-            {/* Community Blog Tab */}
-            <TabsContent value="community">
-              <div className="flex flex-col lg:flex-row gap-8">
-                {/* Sidebar */}
-                <BlogSidebar
-                  selectedCategories={selectedCategories}
-                  onCategoryChange={handleCategoryChange}
-                  onClearFilters={handleClearFilters}
+      {/* Active Filters */}
+      {(selectedCategory || searchQuery) && (
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-muted-foreground">Showing:</span>
+            {searchQuery && (
+              <Badge variant="secondary" className="gap-1">
+                "{searchQuery}"
+                <button onClick={() => handleSearchChange('')} className="ml-1 hover:text-foreground">×</button>
+              </Badge>
+            )}
+            {selectedCategory && (
+              <Badge variant="secondary" className="gap-1">
+                {categories.find(c => c.slug === selectedCategory)?.name}
+                <button onClick={() => setSelectedCategory(null)} className="ml-1 hover:text-foreground">×</button>
+              </Badge>
+            )}
+            <button
+              onClick={() => { setSearchQuery(''); setSelectedCategory(null); setCurrentPage(1); }}
+              className="text-sm text-primary hover:underline"
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <main className="flex-1 container mx-auto px-4 py-8">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading posts...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <p className="text-destructive">{error}</p>
+          </div>
+        ) : filteredPosts.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-display font-semibold text-lg mb-2">No posts found</h3>
+            <p className="text-muted-foreground mb-6">
+              {searchQuery || selectedCategory
+                ? 'Try adjusting your filters or search query.'
+                : 'Be the first to contribute!'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Featured Post */}
+            {featuredPost && currentPage === 1 && (
+              <motion.article
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative bg-gradient-to-br from-primary/5 via-card to-card border border-border/50 rounded-2xl p-6 md:p-8 cursor-pointer group"
+                onClick={() => setSelectedPost(featuredPost)}
+              >
+                <Badge className="mb-4">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Featured
+                </Badge>
+                <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
+                  {featuredPost.title}
+                </h2>
+                <p className="text-muted-foreground mb-4 line-clamp-2 max-w-2xl">
+                  {featuredPost.excerpt}
+                </p>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>{featuredPost.authorName}</span>
+                  <span>•</span>
+                  <span>{new Date(featuredPost.createdAt).toLocaleDateString()}</span>
+                </div>
+              </motion.article>
+            )}
+
+            {/* Posts Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayPosts.map((post, index) => (
+                <BlogPostCard
+                  key={post.id}
+                  post={post}
+                  index={index}
+                  onReadMore={setSelectedPost}
                 />
+              ))}
+            </div>
 
-                {/* Main Content */}
-                <div className="flex-1 space-y-6">
-                  {/* Submit Form */}
-                  <BlogSubmitForm />
-
-                  {/* Posts Header with Sort */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="w-5 h-5 text-primary" />
-                      <h2 className="font-display text-xl font-semibold text-foreground">
-                        Community Posts
-                      </h2>
-                      <span className="text-sm text-muted-foreground">
-                        ({filteredAndSortedPosts.length})
-                      </span>
-                    </div>
-                    
-                    {/* Sort Dropdown */}
-                    <div className="flex items-center gap-2">
-                      <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-                      <Select value={sortBy} onValueChange={(v) => handleSortChange(v as SortOption)}>
-                        <SelectTrigger className="w-[160px] h-9 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="newest">Newest First</SelectItem>
-                          <SelectItem value="oldest">Oldest First</SelectItem>
-                          <SelectItem value="title-asc">Title A-Z</SelectItem>
-                          <SelectItem value="title-desc">Title Z-A</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Posts Grid */}
-                  {postsLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    </div>
-                  ) : paginatedPosts.length > 0 ? (
-                    <>
-                      <div className="grid gap-4">
-                        {paginatedPosts.map((post, index) => (
-                          <BlogPostCard
-                            key={post.id}
-                            post={post}
-                            index={index}
-                            onReadMore={handleReadMore}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Pagination */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 pt-6">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </Button>
-                          
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                              <Button
-                                key={page}
-                                variant={currentPage === page ? "default" : "ghost"}
-                                size="sm"
-                                className="w-9 h-9"
-                                onClick={() => setCurrentPage(page)}
-                              >
-                                {page}
-                              </Button>
-                            ))}
-                          </div>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="card-glow rounded-2xl p-12 text-center">
-                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="font-display text-lg font-semibold text-foreground mb-2">
-                        No posts found
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {selectedCategories.length > 0
-                          ? 'Try adjusting your filters or be the first to post in this category!'
-                          : 'Be the first to share your space knowledge!'}
-                      </p>
-                    </div>
-                  )}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "ghost"}
+                        size="sm"
+                        className="w-9 h-9"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
                 </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
-            </TabsContent>
-          </Tabs>
+            )}
+
+            {/* Results Count */}
+            <p className="text-center text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * POSTS_PER_PAGE) + 1}-{Math.min(currentPage * POSTS_PER_PAGE, filteredPosts.length)} of {filteredPosts.length} posts
+            </p>
+          </div>
+        )}
+
+        {/* Submit Form */}
+        <div className="mt-16">
+          <BlogSubmitForm />
         </div>
       </main>
-
-      <Footer />
 
       {/* Post Modal */}
       <BlogPostModal
         post={selectedPost}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={!!selectedPost}
+        onClose={() => setSelectedPost(null)}
       />
+
+      <Footer />
     </div>
   );
 };
