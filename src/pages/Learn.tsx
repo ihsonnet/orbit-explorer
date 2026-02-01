@@ -98,7 +98,7 @@ const Learn = () => {
       {/* Hero Section */}
       <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="container mx-auto px-4 relative">
+        <div className="max-w-7xl mx-auto px-4 relative">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -121,7 +121,7 @@ const Learn = () => {
 
       {/* Search & Filters */}
       <section className="border-y border-border/50 bg-card/30 backdrop-blur-sm sticky top-16 z-40">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             {/* Search */}
             <div className="relative flex-1 w-full">
@@ -225,7 +225,7 @@ const Learn = () => {
 
       {/* Active Filters */}
       {(selectedCategory || searchQuery) && (
-        <div className="container mx-auto px-4 py-3">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-muted-foreground">Showing:</span>
             {searchQuery && (
@@ -251,10 +251,11 @@ const Learn = () => {
       )}
 
       {/* Content */}
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Content */}
-          <div className="flex-1">
+      <main className="flex-1 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Main Content */}
+            <div className="flex-1 min-w-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -373,17 +374,14 @@ const Learn = () => {
             )}
           </div>
 
-          {/* Sidebar */}
-          <aside className="lg:w-80 shrink-0">
-            <div className="sticky top-32 space-y-6">
-              <TopContributors />
-            </div>
-          </aside>
-        </div>
-
-        {/* Submit Form */}
-        <div className="mt-16">
-          <BlogSubmitForm />
+            {/* Sidebar */}
+            <aside className="lg:w-80 shrink-0">
+              <div className="sticky top-32 space-y-6">
+                <BlogSubmitForm />
+                <TopContributors />
+              </div>
+            </aside>
+          </div>
         </div>
       </main>
 
