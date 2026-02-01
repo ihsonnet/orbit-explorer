@@ -127,25 +127,10 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
             className="overflow-hidden"
           >
             <div className="p-4 rounded-lg bg-secondary/20 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="comment-name" className="text-xs text-muted-foreground">
-                    Name *
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <Input
-                      id="comment-name"
-                      placeholder="Your name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="pl-8 h-9 text-sm bg-background/50 border-border/50"
-                    />
-                  </div>
-                </div>
+              <div className="space-y-3">
                 <div className="space-y-1">
                   <Label htmlFor="comment-email" className="text-xs text-muted-foreground">
-                    Email *
+                    Email * <span className="opacity-70">(for your Gravatar photo)</span>
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -155,6 +140,21 @@ const CommentSection = ({ postId, comments = [] }: CommentSectionProps) => {
                       placeholder="you@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="pl-8 h-9 text-sm bg-background/50 border-border/50"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="comment-name" className="text-xs text-muted-foreground">
+                    Display Name *
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      id="comment-name"
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="pl-8 h-9 text-sm bg-background/50 border-border/50"
                     />
                   </div>

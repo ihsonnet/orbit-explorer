@@ -200,27 +200,11 @@ const BlogSubmitForm = () => {
             className="overflow-hidden"
           >
             <div className="px-6 pb-6 space-y-4 border-t border-border/30">
-              {/* Author Info Row */}
-              <div className="grid md:grid-cols-2 gap-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="authorName" className="text-sm text-muted-foreground">
-                    Your Name *
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="authorName"
-                      placeholder="John Doe"
-                      value={formData.authorName}
-                      onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
-                      className="pl-10 bg-secondary/30 border-border/50"
-                    />
-                  </div>
-                </div>
-
+              {/* Author Info */}
+              <div className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="authorEmail" className="text-sm text-muted-foreground">
-                    Your Email * <span className="text-xs opacity-70">(for Gravatar photo)</span>
+                    Your Email * <span className="text-xs opacity-70">(used for your Gravatar photo)</span>
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -233,6 +217,25 @@ const BlogSubmitForm = () => {
                       className="pl-10 bg-secondary/30 border-border/50"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="authorName" className="text-sm text-muted-foreground">
+                    Display Name * <span className="text-xs opacity-70">(how you'll appear)</span>
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="authorName"
+                      placeholder="John Doe"
+                      value={formData.authorName}
+                      onChange={(e) => setFormData({ ...formData, authorName: e.target.value })}
+                      className="pl-10 bg-secondary/30 border-border/50"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Note: Gravatar provides your photo from email. Name is entered separately as Gravatar's name API has browser restrictions.
+                  </p>
                 </div>
               </div>
 
