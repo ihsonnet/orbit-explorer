@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar, User, Tag, ArrowRight } from 'lucide-react';
+import { Calendar, User, ArrowRight } from 'lucide-react';
 import { SpacePost, categoryLabels, getGravatarUrl } from '@/data/posts/types';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -65,16 +65,20 @@ const BlogPostCard = ({ post, index, onReadMore }: BlogPostCardProps) => {
             </span>
           </div>
 
-          {post.tags.length > 0 && (
-            <div className="flex items-center gap-1 mt-3 flex-wrap">
-              <Tag className="w-3 h-3 text-muted-foreground" />
-              {post.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-xs text-muted-foreground">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            <Badge variant="outline" className="text-xs">
+              {categoryLabels[post.category]}
+            </Badge>
+            {post.tags.length > 0 && (
+              <>
+                {post.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                    #{tag}
+                  </span>
+                ))}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </motion.article>
