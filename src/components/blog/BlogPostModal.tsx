@@ -1,8 +1,7 @@
-import { X, Calendar, User, Tag } from 'lucide-react';
+import { Calendar, Tag } from 'lucide-react';
 import { SpacePost, categoryLabels, getGravatarUrl } from '@/data/posts/types';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import CommentSection from './CommentSection';
 
 interface BlogPostModalProps {
   post: SpacePost | null;
@@ -110,7 +110,7 @@ const BlogPostModal = ({ post, isOpen, onClose }: BlogPostModalProps) => {
           </div>
         </ScrollArea>
 
-        <div className="p-6 pt-0 border-t border-border/30">
+        <div className="p-6 pt-4 border-t border-border/30 space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
             <Tag className="w-4 h-4 text-muted-foreground" />
             {post.tags.map((tag) => (
@@ -119,6 +119,9 @@ const BlogPostModal = ({ post, isOpen, onClose }: BlogPostModalProps) => {
               </Badge>
             ))}
           </div>
+
+          {/* Comments Section */}
+          <CommentSection postId={post.id} comments={post.comments} />
         </div>
       </DialogContent>
     </Dialog>
