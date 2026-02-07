@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import GlobeVisualization from '@/components/GlobeVisualization';
+import SEO from '@/components/SEO';
 import { SatelliteFilters } from '@/components/SatelliteFilterPanel';
 import { Globe as GlobeIcon, Satellite, Radio, Navigation as NavIcon, Cloud, Eye } from 'lucide-react';
 import { ORBIT_COLORS } from '@/lib/orbitColors';
@@ -27,8 +28,25 @@ const Global = () => {
     { icon: Eye, label: 'Earth Observation', value: '200+', color: 'text-green-400' },
   ];
 
+  const globalJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Global Satellite View - 3D Earth Visualization',
+    description: 'Interactive 3D globe showing 9,000+ satellites orbiting Earth in real-time.',
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'Web Browser',
+    featureList: ['3D globe visualization', 'Real-time satellite positions', 'Filter by orbit type', 'Filter by satellite function'],
+  };
+
   return (
     <div className="min-h-screen relative flex flex-col">
+      <SEO
+        title="Global Satellite View - Interactive 3D Earth Visualization"
+        description="Explore Earth's satellite infrastructure with our interactive 3D globe. See 9,000+ active satellites in LEO, MEO, and GEO orbits powering modern civilization."
+        keywords="3D satellite map, global satellite view, Earth satellites visualization, satellite constellation, Starlink map, GPS satellites, satellite orbits visualization"
+        canonicalUrl="https://spaceforeveryone.com/global"
+        jsonLd={globalJsonLd}
+      />
       <SpaceBackground />
       <Navigation />
 

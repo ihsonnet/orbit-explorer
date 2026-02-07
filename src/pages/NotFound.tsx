@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import SpaceBackground from "@/components/SpaceBackground";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const NotFound = () => {
   const location = useLocation();
@@ -15,6 +16,11 @@ const NotFound = () => {
 
   return (
     <div className="relative min-h-screen flex flex-col overflow-hidden">
+      <SEO
+        title="404 - Page Not Found"
+        description="Lost in space? The page you're looking for doesn't exist. Navigate back to explore satellites and space technology."
+        noIndex={true}
+      />
       <SpaceBackground />
       <Navigation />
       

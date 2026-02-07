@@ -3,11 +3,30 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import DayTimeline from '@/components/DayTimeline';
+import SEO from '@/components/SEO';
 import { Calendar, Satellite, Info } from 'lucide-react';
 
 const MyDay = () => {
+  const myDayJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'How Satellites Power Your Daily Life',
+    description: 'Interactive timeline showing how space technology enables everyday activities from morning alarms to evening entertainment.',
+    author: {
+      '@type': 'Organization',
+      name: 'S.P.A.C.E. for Everyone',
+    },
+    articleSection: 'Space Education',
+  };
   return (
     <div className="min-h-screen relative flex flex-col">
+      <SEO
+        title="My Day & Space - How Satellites Power Your Life"
+        description="Discover how your daily activities depend on satellite technology. From GPS navigation to weather forecasts, explore the invisible space infrastructure that powers modern life."
+        keywords="satellite daily life, GPS navigation, weather satellites, communication satellites, space technology everyday, how satellites work, GNSS, satellite internet"
+        canonicalUrl="https://spaceforeveryone.com/my-day"
+        jsonLd={myDayJsonLd}
+      />
       <SpaceBackground />
       <Navigation />
 
