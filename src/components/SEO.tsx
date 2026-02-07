@@ -15,12 +15,13 @@ interface SEOProps {
 }
 
 const BASE_URL = 'https://spaceforeveryone.com';
-const DEFAULT_IMAGE = 'https://lovable.dev/opengraph-image-p98pqg.png';
+const DEFAULT_IMAGE = 'https://spaceforeveryone.com/og-image.png';
 const SITE_NAME = 'S.P.A.C.E. for Everyone';
+const DEFAULT_DESCRIPTION = 'We already live in a space-enabled world. Satellites silently power your internet, navigation, weather forecasts, and disaster response. Space isn\'t just for scientists — it\'s for everyone.';
 
 const SEO = ({
   title,
-  description = 'Discover how satellites silently power your internet, navigation, weather forecasts, and more. Space isn\'t just for scientists — it\'s for everyone.',
+  description = DEFAULT_DESCRIPTION,
   keywords = 'satellites, space, NASA, SpaceX, GPS, earth observation, weather satellites, space education, satellite tracking, LEO, MEO, GEO, orbital mechanics',
   canonicalUrl,
   ogImage = DEFAULT_IMAGE,
@@ -33,7 +34,7 @@ const SEO = ({
 }: SEOProps) => {
   const fullTitle = title 
     ? `${title} | ${SITE_NAME}`
-    : `${SITE_NAME} – Explore The Space We Already Live In`;
+    : `${SITE_NAME} - Explore The Space We Already Live In`;
 
   const canonical = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : BASE_URL);
 
