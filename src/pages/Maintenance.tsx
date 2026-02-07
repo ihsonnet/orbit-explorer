@@ -1,10 +1,16 @@
 import { motion } from 'framer-motion';
 import { Rocket, Wrench, Satellite } from 'lucide-react';
 import SpaceBackground from '@/components/SpaceBackground';
+import SEO from '@/components/SEO';
 
 const Maintenance = () => {
   return (
     <div className="min-h-screen relative flex flex-col items-center justify-center overflow-hidden">
+      <SEO
+        title="Maintenance Mode"
+        description="S.P.A.C.E. for Everyone is currently undergoing maintenance. We'll be back soon with an even better experience."
+        noIndex={true}
+      />
       <SpaceBackground />
       
       {/* Animated orbit rings */}

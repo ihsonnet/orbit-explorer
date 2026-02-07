@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import SatelliteCard from '@/components/SatelliteCard';
 import GPSLocatingAnimation from '@/components/GPSLocatingAnimation';
+import SEO from '@/components/SEO';
 import { useTLEData } from '@/hooks/useTLEData';
 import { SatelliteInfo } from '@/lib/satellites';
 
@@ -152,8 +153,25 @@ const SkyAboveMe = () => {
     setIsLoading(false);
   };
 
+  const skyAboveJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Sky Above Me - Satellite Tracker',
+    description: 'Real-time satellite tracking tool. Enter your location to discover satellites orbiting above you.',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Web Browser',
+    featureList: ['Real-time satellite tracking', 'GPS location detection', 'Satellite filtering by orbit type', 'Live TLE data from Celestrak'],
+  };
+
   return (
     <div className="min-h-screen relative flex flex-col">
+      <SEO
+        title="Sky Above Me - Real-Time Satellite Tracker"
+        description="Discover satellites orbiting above your location right now. Track LEO, MEO, and GEO satellites in real-time with our interactive satellite tracker powered by live TLE data."
+        keywords="satellite tracker, satellites above me, real-time satellite tracking, LEO satellites, GPS tracking, Starlink tracker, ISS tracker, satellite finder"
+        canonicalUrl="https://spaceforeveryone.com/sky-above-me"
+        jsonLd={skyAboveJsonLd}
+      />
       <SpaceBackground />
       <Navigation />
 

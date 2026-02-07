@@ -6,11 +6,36 @@ import ImpactSection from '@/components/ImpactSection';
 import SpaceBackground from '@/components/SpaceBackground';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 import { ORBIT_COLORS } from '@/lib/orbitColors';
 
 const Index = () => {
+  const homePageJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'S.P.A.C.E. for Everyone - Home',
+    description: 'Discover how satellites silently power your internet, navigation, weather forecasts, and more.',
+    mainEntity: {
+      '@type': 'SoftwareApplication',
+      name: 'S.P.A.C.E. for Everyone',
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Web Browser',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+    },
+  };
   return (
     <div className="min-h-screen relative flex flex-col">
+      <SEO
+        title="Home"
+        description="Discover how satellites silently power your internet, navigation, weather forecasts, and more. Space isn't just for scientists — it's for everyone. Track 9,000+ active satellites in real-time."
+        keywords="satellites, space technology, GPS, satellite tracking, LEO, MEO, GEO, space education, orbital mechanics, Starlink, ISS, weather satellites"
+        canonicalUrl="https://spaceforeveryone.com/"
+        jsonLd={homePageJsonLd}
+      />
       <SpaceBackground />
       <Navigation />
 

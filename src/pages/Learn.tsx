@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, SortAsc, BookOpen, Loader2, ChevronDown, Users, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,8 +92,32 @@ const Learn = () => {
   const featuredPost = !searchQuery && !selectedCategory ? filteredPosts[0] : null;
   const displayPosts = featuredPost ? paginatedPosts.filter(p => p.id !== featuredPost.id) : paginatedPosts;
 
+  const learnJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Your S.P.A.C.E. - Community Space Knowledge',
+    description: 'Community-driven space education blog featuring articles about satellites, orbits, and space technology.',
+    blogPost: posts.slice(0, 10).map(post => ({
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description: post.excerpt,
+      author: {
+        '@type': 'Person',
+        name: post.authorName,
+      },
+      datePublished: post.publishedAt || post.createdAt,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO
+        title="Learn & Share - Space Education Community"
+        description="Explore community insights on satellites, orbits, and space technology. Share your knowledge with fellow space enthusiasts. Learn about LEO, MEO, GEO orbits and more."
+        keywords="space education, satellite learning, orbital mechanics, space community, astronomy blog, satellite technology articles, space science"
+        canonicalUrl="https://spaceforeveryone.com/learn"
+        jsonLd={learnJsonLd}
+      />
       <Navigation />
 
       {/* Hero Section */}
