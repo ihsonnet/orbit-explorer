@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminPostList from '@/components/admin/AdminPostList';
 import AdminCategoryManager from '@/components/admin/AdminCategoryManager';
 import MaintenanceToggle from '@/components/admin/MaintenanceToggle';
+import LogoToggle from '@/components/admin/LogoToggle';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -87,6 +88,7 @@ const AdminDashboard = () => {
                 <h2 className="text-xl font-display font-semibold text-foreground mb-2">Site Settings</h2>
                 <p className="text-muted-foreground">Manage global site configuration</p>
               </div>
+              <LogoToggle />
               <MaintenanceToggle />
             </div>
           </TabsContent>
