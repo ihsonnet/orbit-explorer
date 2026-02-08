@@ -31,7 +31,7 @@ const Index = () => {
     <div className="min-h-screen relative flex flex-col">
       <SEO
         title="Home"
-        description="Discover how satellites silently power your internet, navigation, weather forecasts, and more. Space isn't just for scientists — it's for everyone. Track 9,000+ active satellites in real-time."
+        description="Track 9,000+ satellites powering your GPS, internet & weather. Explore real-time space data. Space isn't just for scientists—it's for everyone."
         keywords="satellites, space technology, GPS, satellite tracking, LEO, MEO, GEO, space education, orbital mechanics, Starlink, ISS, weather satellites"
         canonicalUrl="https://spaceforeveryone.com/"
         jsonLd={homePageJsonLd}
@@ -64,6 +64,8 @@ const Index = () => {
                 <br />
                 <span className="text-foreground">for Everyone</span>
               </h1>
+              
+              <h2 className="sr-only">Real-Time Satellite Tracking and Space Education Platform</h2>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl leading-relaxed">
                 We already live in a space-enabled world. Satellites silently power your 
@@ -185,10 +187,10 @@ const Index = () => {
             </div>
 
             <div className="relative z-10">
-              <Satellite className="w-12 h-12 text-primary mx-auto mb-6" />
-              <h2 className="font-display text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              <Satellite className="w-12 h-12 text-primary mx-auto mb-6" aria-hidden="true" />
+              <h3 className="font-display text-3xl md:text-4xl font-bold mb-4 text-foreground">
                 Ready to Explore?
-              </h2>
+              </h3>
               <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
                 Discover the satellites above your location, see how your daily life connects to space, 
                 and explore the global satellite infrastructure.

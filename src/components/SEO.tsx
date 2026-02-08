@@ -17,7 +17,7 @@ interface SEOProps {
 const BASE_URL = 'https://spaceforeveryone.com';
 const DEFAULT_IMAGE = 'https://spaceforeveryone.com/og-image.png';
 const SITE_NAME = 'S.P.A.C.E. for Everyone';
-const DEFAULT_DESCRIPTION = 'We already live in a space-enabled world. Satellites silently power your internet, navigation, weather forecasts, and disaster response. Space isn\'t just for scientists — it\'s for everyone.';
+const DEFAULT_DESCRIPTION = 'Track 9,000+ satellites powering your GPS, internet & weather. Explore real-time space data. Space isn\'t just for scientists—it\'s for everyone.';
 
 const SEO = ({
   title,
@@ -33,7 +33,7 @@ const SEO = ({
   noIndex = false,
 }: SEOProps) => {
   const fullTitle = title 
-    ? `${title} | ${SITE_NAME}`
+    ? `${title} | S.P.A.C.E. for Everyone`
     : `${SITE_NAME} - Explore The Space We Already Live In`;
 
   const canonical = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : BASE_URL);
