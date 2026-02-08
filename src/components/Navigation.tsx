@@ -27,11 +27,11 @@ const Navigation = () => {
         <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl px-6 py-3 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
-            {settings.show_logo ? (
+{settings.show_logo ? (
               <img 
                 src={space4eLogo} 
                 alt="S.P.A.C.E. for Everyone" 
-                className="h-10 w-auto object-contain"
+                className="h-8 max-w-[160px] object-contain"
               />
             ) : (
               <>
