@@ -44,6 +44,11 @@ const Footer = () => {
                   Learn
                 </Link>
               </li>
+              <li>
+                <Link to="/space-ambassador-program" className="hover:text-primary transition-colors">
+                  Ambassador Program
+                </Link>
+              </li>
             </ul>
           </div>
 

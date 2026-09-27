@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Maintenance from "./pages/Maintenance";
+import Ambassadors from "./pages/Ambassadors";
 import { useSiteSettings } from "./hooks/useSiteSettings";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const AppRoutes = () => {
       <Route path="/my-day" element={<MyDay />} />
       <Route path="/global" element={<Global />} />
       <Route path="/learn" element={<Learn />} />
+      <Route path="/space-ambassador-program" element={<Ambassadors />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="*" element={<NotFound />} />
