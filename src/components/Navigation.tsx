@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Satellite, Globe, Calendar, BookOpen, Home } from 'lucide-react';
+import { ArrowRight, Satellite, Globe, Calendar, BookOpen, Home, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import space4eLogo from '@/assets/space4e-logo.png';
@@ -8,9 +8,10 @@ import space4eLogo from '@/assets/space4e-logo.png';
 const navItems = [
   { path: '/', label: 'Home', icon: Home },
   { path: '/sky-above-me', label: 'Sky Above Me', icon: Satellite },
-  { path: '/my-day', label: 'My Day & Space', icon: Calendar },
+  { path: '/my-day-and-space', label: 'My Day & Space', icon: Calendar },
   { path: '/global', label: 'Global View', icon: Globe },
   { path: '/learn', label: 'Learn & Share', icon: BookOpen },
+  { path: '/space-lab', label: 'Lab', icon: FlaskConical },
 ];
 
 const Navigation = () => {

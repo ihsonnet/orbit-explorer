@@ -1,27 +1,29 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
-  Sun, Coffee, Car, Laptop, Utensils, CloudSun, 
-  Navigation, Radio, Eye, Moon, Satellite
+  Sun, Car, Laptop, Utensils, CloudSun, Navigation,
+  Radio, Eye, Moon, Satellite, Clock, CircleAlert
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { DayAnalysisStep } from '@/lib/dayAnalysis';
 
-interface TimelineStep {
-  time: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  satelliteTypes: string[];
-  explanation: string;
-  examples: string[];
-}
+const iconMap: Record<DayAnalysisStep['icon'], React.ElementType> = {
+  weather: CloudSun,
+  navigation: Navigation,
+  communication: Radio,
+  'earth-observation': Eye,
+  timing: Clock,
+  emergency: CircleAlert,
+  entertainment: Moon,
+  general: Satellite,
+};
 
-const timelineData: TimelineStep[] = [
+const timelineData: DayAnalysisStep[] = [
   {
     time: '6:30 AM',
     title: 'Check Morning Weather',
     description: 'You check your weather app to decide what to wear.',
-    icon: Sun,
+    icon: 'weather',
     satelliteTypes: ['WEATHER', 'EARTH_OBSERVATION'],
     explanation: 'Weather forecasts rely on data from geostationary and polar-orbiting weather satellites that continuously monitor atmospheric conditions.',
     examples: ['GOES-16 (NOAA)', 'EUMETSAT Meteosat', 'Sentinel-3'],
@@ -30,7 +32,7 @@ const timelineData: TimelineStep[] = [
     time: '7:00 AM',
     title: 'Morning Commute Navigation',
     description: 'Your GPS guides you through traffic to work.',
-    icon: Car,
+    icon: 'navigation',
     satelliteTypes: ['GNSS'],
     explanation: 'GPS satellites (and other GNSS constellations) provide precise positioning data that enables turn-by-turn navigation and traffic updates.',
     examples: ['GPS IIF-3', 'Galileo SAT-24', 'GLONASS-K'],
@@ -39,7 +41,7 @@ const timelineData: TimelineStep[] = [
     time: '9:00 AM',
     title: 'Video Conference Call',
     description: 'You join a video call with colleagues across the globe.',
-    icon: Laptop,
+    icon: 'communication',
     satelliteTypes: ['COMMUNICATION'],
     explanation: 'Communication satellites relay data across continents, enabling real-time video calls and internet connectivity.',
     examples: ['Starlink satellites', 'ViaSat-3', 'SES Astra'],
@@ -48,7 +50,7 @@ const timelineData: TimelineStep[] = [
     time: '12:00 PM',
     title: 'Food Delivery Order',
     description: 'You order lunch using a delivery app.',
-    icon: Utensils,
+    icon: 'navigation',
     satelliteTypes: ['GNSS', 'COMMUNICATION'],
     explanation: 'Delivery apps use GPS for driver tracking and satellites for real-time communication between you and the restaurant.',
     examples: ['GPS constellation', 'Iridium NEXT'],
@@ -57,7 +59,7 @@ const timelineData: TimelineStep[] = [
     time: '3:00 PM',
     title: 'Check Storm Alerts',
     description: 'You receive a severe weather alert on your phone.',
-    icon: CloudSun,
+    icon: 'weather',
     satelliteTypes: ['WEATHER', 'COMMUNICATION'],
     explanation: 'Storm tracking satellites detect severe weather patterns and communicate alerts through satellite-based messaging systems.',
     examples: ['GOES-18', 'NOAA-20', 'Himawari-9'],
@@ -66,15 +68,23 @@ const timelineData: TimelineStep[] = [
     time: '9:00 PM',
     title: 'Stream a Movie',
     description: 'You relax by streaming your favorite show.',
-    icon: Moon,
+    icon: 'entertainment',
     satelliteTypes: ['COMMUNICATION'],
     explanation: 'While most streaming uses fiber/cable, satellites provide backbone connectivity and serve millions in rural areas.',
     examples: ['Starlink', 'Hughes Jupiter', 'OneWeb'],
   },
 ];
 
-const DayTimeline = () => {
+interface DayTimelineProps {
+  steps?: DayAnalysisStep[];
+}
+
+const DayTimeline = ({ steps = timelineData }: DayTimelineProps) => {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
+
+  useEffect(() => {
+    setSelectedStep(null);
+  }, [steps]);
 
   return (
     <div className="relative">
@@ -82,13 +92,14 @@ const DayTimeline = () => {
       <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-accent to-primary opacity-30" />
 
       <div className="space-y-8">
-        {timelineData.map((step, index) => {
+        {steps.map((step, index) => {
           const isSelected = selectedStep === index;
           const isEven = index % 2 === 0;
+          const StepIcon = iconMap[step.icon];
 
           return (
             <motion.div
-              key={index}
+              key={`${step.time}-${step.title}-${index}`}
               initial={{ opacity: 0, x: isEven ? -50 : 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -123,7 +134,7 @@ const DayTimeline = () => {
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <step.icon className="w-5 h-5 text-primary" />
+                      <StepIcon className="w-5 h-5 text-primary" />
                     </div>
                     <div>
                       <span className="text-xs text-primary font-medium">{step.time}</span>

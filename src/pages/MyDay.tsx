@@ -1,12 +1,18 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SpaceBackground from '@/components/SpaceBackground';
 import DayTimeline from '@/components/DayTimeline';
+import DayAnalysisDialog from '@/components/DayAnalysisDialog';
 import SEO from '@/components/SEO';
-import { Calendar, Satellite, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { DayAnalysis } from '@/lib/dayAnalysis';
+import { Calendar, Satellite, Info, Sparkles, RotateCcw } from 'lucide-react';
 
 const MyDay = () => {
+  const [analysis, setAnalysis] = useState<DayAnalysis | null>(null);
+
   const myDayJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -24,7 +30,7 @@ const MyDay = () => {
         title="My Day & Space - How Satellites Power Your Life"
         description="Discover how your daily activities depend on satellite technology. From GPS navigation to weather forecasts, explore the invisible space infrastructure that powers modern life."
         keywords="satellite daily life, GPS navigation, weather satellites, communication satellites, space technology everyday, how satellites work, GNSS, satellite internet"
-        canonicalUrl="https://spaceforeveryone.com/my-day"
+        canonicalUrl="https://spaceforeveryone.com/my-day-and-space"
         jsonLd={myDayJsonLd}
       />
       <SpaceBackground />
@@ -57,23 +63,51 @@ const MyDay = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="card-glow rounded-2xl p-5 mb-12 flex items-start gap-4"
+            className="card-glow rounded-2xl p-5 mb-12 flex flex-col gap-5 md:flex-row md:items-center"
           >
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Info className="w-5 h-5 text-primary" />
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Info className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-foreground mb-1">How to Use</h3>
+                <p className="text-sm text-muted-foreground">
+                  Explore the sample day below, or describe your own day and let AI reveal its connections to satellites and space technology. Click any timeline card to learn more.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-display font-semibold text-foreground mb-1">How to Use</h3>
-              <p className="text-sm text-muted-foreground">
-                Scroll through a typical day and see how satellites enable each activity. 
-                Click on any card to expand and learn about the specific satellite types 
-                and real examples that make these daily conveniences possible.
-              </p>
-            </div>
+            <DayAnalysisDialog onAnalysis={setAnalysis} />
           </motion.div>
 
+          {analysis && (
+            <motion.section
+              id="your-day-analysis"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-10 scroll-mt-32 rounded-2xl border border-primary/30 bg-primary/5 p-6"
+              aria-live="polite"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                    Your AI-powered timeline
+                  </div>
+                  <h2 className="font-display text-2xl font-bold text-foreground">Your Day &amp; Space</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    {analysis.summary}
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => setAnalysis(null)}>
+                  <RotateCcw aria-hidden="true" />
+                  Show Sample Day
+                </Button>
+              </div>
+            </motion.section>
+          )}
+
           {/* Timeline */}
-          <DayTimeline />
+          <DayTimeline steps={analysis?.steps} />
 
           {/* Summary Section */}
           <motion.div

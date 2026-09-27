@@ -22,8 +22,8 @@
   
   <!-- My Day & Space - Daily space connections -->
   <url>
-    <loc>https://spaceforeveryone.com/my-day</loc>
-    <lastmod>2025-02-07</lastmod>
+    <loc>https://spaceforeveryone.com/my-day-and-space</loc>
+    <lastmod>2026-09-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -50,6 +50,14 @@
     <lastmod>2026-09-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- S.P.A.C.E. Lab - Interactive 3D learning experiences -->
+  <url>
+    <loc>https://spaceforeveryone.com/space-lab</loc>
+    <lastmod>2026-09-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 
 </urlset>

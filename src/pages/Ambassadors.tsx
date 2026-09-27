@@ -11,6 +11,8 @@ import Footer from '@/components/Footer';
 import Navigation from '@/components/Navigation';
 import SEO from '@/components/SEO';
 import SpaceBackground from '@/components/SpaceBackground';
+import AmbassadorMap from '@/components/AmbassadorMap';
+import AmbassadorGallery from '@/components/AmbassadorGallery';
 import activityNotes from '@/assets/ambassadors/activity-notes.webp';
 import reportingEvent from '@/assets/ambassadors/reporting-event.webp';
 import spaceWorkshop from '@/assets/ambassadors/space-workshop.webp';
@@ -76,6 +78,8 @@ const Ambassadors = () => {
             </motion.p>
           </div>
         </section>
+
+        <AmbassadorMap />
 
         <section className="px-4 pb-24 md:pb-32" aria-labelledby="become-ambassador-title">
           <motion.div
@@ -236,6 +240,8 @@ const Ambassadors = () => {
             </div>
           </motion.div>
         </section>
+
+        <AmbassadorGallery />
       </main>
 
       <Footer />

@@ -81,7 +81,7 @@ const Index = () => {
                   </Link>
                 </Button>
                 <Button variant="cosmic" size="xl" asChild>
-                  <Link to="/my-day">
+                  <Link to="/my-day-and-space">
                     See Your Day in Space
                   </Link>
                 </Button>
@@ -203,7 +203,7 @@ const Index = () => {
                   </Link>
                 </Button>
                 <Button variant="nebula" size="lg" asChild>
-                  <Link to="/my-day">
+                  <Link to="/my-day-and-space">
                     <Calendar className="w-5 h-5" />
                     My Day & Space
                   </Link>
