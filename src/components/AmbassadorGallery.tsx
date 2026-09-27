@@ -19,6 +19,18 @@ const ambassadorPhotos = [
     width: 1920,
     height: 1280,
   },
+  {
+    src: '/ambassador4.webp',
+    alt: 'A space ambassador guiding students as they hold up their Space is for Everyone signs',
+    width: 1024,
+    height: 768,
+  },
+  {
+    src: '/ambassador-amy.webp',
+    alt: 'Two young participants holding a Space is for Everyone, I am part of it sign signed Amy',
+    width: 1600,
+    height: 1200,
+  },
 ];
 
 const AmbassadorGallery = () => {
@@ -42,7 +54,7 @@ const AmbassadorGallery = () => {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
           {ambassadorPhotos.map((photo, index) => (
             <figure
               key={photo.src}
@@ -55,7 +67,7 @@ const AmbassadorGallery = () => {
                 height={photo.height}
                 loading="lazy"
                 decoding="async"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]"
               />
               <div

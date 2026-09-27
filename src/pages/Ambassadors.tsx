@@ -13,10 +13,8 @@ import SEO from '@/components/SEO';
 import SpaceBackground from '@/components/SpaceBackground';
 import AmbassadorMap from '@/components/AmbassadorMap';
 import AmbassadorGallery from '@/components/AmbassadorGallery';
-import activityNotes from '@/assets/ambassadors/activity-notes.webp';
-import reportingEvent from '@/assets/ambassadors/reporting-event.webp';
-import spaceWorkshop from '@/assets/ambassadors/space-workshop.webp';
-import stargazingHost from '@/assets/ambassadors/stargazing-host.webp';
+import roleInSpace from '@/assets/ambassadors/role-in-space.webp';
+import manyCommunities from '@/assets/ambassadors/many-communities.webp';
 
 const BECOME_AMBASSADOR_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSeCaUxQdKfdPXeRQJgF7ENXJpB3rqmiAwanyFhY5AKJA6goDg/viewform';
@@ -81,7 +79,7 @@ const Ambassadors = () => {
 
         <AmbassadorMap />
 
-        <section className="px-4 pb-24 md:pb-32" aria-labelledby="become-ambassador-title">
+        <section className="px-4 pb-14 md:pb-20" aria-labelledby="become-ambassador-title">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -89,9 +87,9 @@ const Ambassadors = () => {
             transition={{ duration: 0.65 }}
             className="max-w-7xl mx-auto card-glow rounded-[2rem] overflow-hidden"
           >
-            <div className="grid lg:grid-cols-[0.85fr_1.15fr]">
-              <div className="p-7 sm:p-10 lg:p-14 xl:p-16 flex flex-col justify-center">
-                <div className="flex items-center gap-3 text-primary mb-6">
+            <div className="grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
+                <div className="flex items-center gap-3 text-primary mb-4">
                   <span className="font-display text-sm font-semibold tracking-[0.24em]">01</span>
                   <span className="h-px w-10 bg-primary/50" />
                   <UsersRound className="w-5 h-5" aria-hidden="true" />
@@ -99,17 +97,17 @@ const Ambassadors = () => {
 
                 <h2
                   id="become-ambassador-title"
-                  className="font-display text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                  className="font-display text-2xl md:text-3xl font-bold text-foreground leading-tight"
                 >
                   SPACE4E — Become a Space Ambassador
                 </h2>
-                <p className="mt-5 text-muted-foreground leading-relaxed">
+                <p className="mt-3 text-muted-foreground leading-relaxed">
                   Apply to represent S.P.A.C.E. in your community. Share useful
                   knowledge, create welcoming conversations, and help more people
                   recognize the space systems already supporting their lives.
                 </p>
 
-                <ul className="mt-7 space-y-3 text-sm text-foreground/90">
+                <ul className="mt-5 space-y-2 text-sm text-foreground/90">
                   {[
                     'Make space knowledge approachable',
                     'Create meaningful local activities',
@@ -124,7 +122,7 @@ const Ambassadors = () => {
                   ))}
                 </ul>
 
-                <Button variant="hero" size="lg" className="mt-9 w-full sm:w-fit" asChild>
+                <Button variant="hero" size="lg" className="mt-6 w-full sm:w-fit" asChild>
                   <a href={BECOME_AMBASSADOR_URL} target="_blank" rel="noopener noreferrer">
                     Become a Space Ambassador
                     <ArrowUpRight className="w-5 h-5" aria-hidden="true" />
@@ -133,25 +131,14 @@ const Ambassadors = () => {
                 <p className="mt-3 text-xs text-muted-foreground">Opens the SPACE4E application form</p>
               </div>
 
-              <div className="grid grid-cols-5 gap-2 p-2 min-h-[420px] lg:min-h-[620px]">
-                <div className="col-span-3 overflow-hidden rounded-[1.55rem]">
+              <div className="p-2 lg:p-3 flex items-center">
+                <div className="w-full aspect-[3/2] flex items-center justify-center overflow-hidden rounded-[1.55rem] bg-[#f3efe6] p-3 sm:p-4">
                   <img
-                    src={stargazingHost}
-                    alt="A space ambassador welcoming a community group to a rooftop stargazing session"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
-                    width="1448"
-                    height="1086"
-                    loading="eager"
-                    decoding="async"
-                  />
-                </div>
-                <div className="col-span-2 overflow-hidden rounded-[1.55rem]">
-                  <img
-                    src={spaceWorkshop}
-                    alt="A space ambassador leading a hands-on satellite workshop"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
-                    width="1448"
-                    height="1086"
+                    src={roleInSpace}
+                    alt="Illustration titled 'You have a role in space': a person walks across stepping stones labeled learn, question, explore, create, participate and share"
+                    className="w-full h-full object-contain transition-transform duration-700 hover:scale-[1.03]"
+                    width="2000"
+                    height="1130"
                     loading="eager"
                     decoding="async"
                   />
@@ -161,7 +148,7 @@ const Ambassadors = () => {
           </motion.div>
         </section>
 
-        <section className="px-4 pb-24 md:pb-32" aria-labelledby="activity-report-title">
+        <section className="px-4 pb-20 md:pb-28" aria-labelledby="activity-report-title">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -169,34 +156,23 @@ const Ambassadors = () => {
             transition={{ duration: 0.65 }}
             className="max-w-7xl mx-auto card-glow rounded-[2rem] overflow-hidden"
           >
-            <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
-              <div className="grid grid-cols-5 gap-2 p-2 min-h-[420px] lg:min-h-[620px] order-2 lg:order-1">
-                <div className="col-span-2 overflow-hidden rounded-[1.55rem]">
+            <div className="grid lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+              <div className="p-2 lg:p-3 flex items-center order-2 lg:order-1">
+                <div className="w-full aspect-[3/2] flex items-center justify-center overflow-hidden rounded-[1.55rem] bg-[#f3efe6] p-3 sm:p-4">
                   <img
-                    src={activityNotes}
-                    alt="Ambassadors organizing photos and notes from a community astronomy event"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
-                    width="1448"
-                    height="1086"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="col-span-3 overflow-hidden rounded-[1.55rem]">
-                  <img
-                    src={reportingEvent}
-                    alt="A space ambassador recording the results of a stargazing activity"
-                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
-                    width="1448"
-                    height="1086"
+                    src={manyCommunities}
+                    alt="Illustration titled 'One planet. Many communities. One space.': a globe connected to parks, libraries, campuses, streets and community gatherings"
+                    className="w-full h-full object-contain transition-transform duration-700 hover:scale-[1.03]"
+                    width="2000"
+                    height="1334"
                     loading="lazy"
                     decoding="async"
                   />
                 </div>
               </div>
 
-              <div className="p-7 sm:p-10 lg:p-14 xl:p-16 flex flex-col justify-center order-1 lg:order-2">
-                <div className="flex items-center gap-3 text-accent mb-6">
+              <div className="p-6 sm:p-8 lg:p-10 flex flex-col justify-center order-1 lg:order-2">
+                <div className="flex items-center gap-3 text-accent mb-4">
                   <span className="font-display text-sm font-semibold tracking-[0.24em]">02</span>
                   <span className="h-px w-10 bg-accent/50" />
                   <ClipboardCheck className="w-5 h-5" aria-hidden="true" />
@@ -204,17 +180,17 @@ const Ambassadors = () => {
 
                 <h2
                   id="activity-report-title"
-                  className="font-display text-3xl md:text-4xl font-bold text-foreground leading-tight"
+                  className="font-display text-2xl md:text-3xl font-bold text-foreground leading-tight"
                 >
                   SPACE4E — Ambassador Activity Report
                 </h2>
-                <p className="mt-5 text-muted-foreground leading-relaxed">
+                <p className="mt-3 text-muted-foreground leading-relaxed">
                   Already an ambassador? Tell us about the activity you led, who it
                   reached, and what you learned. Each report helps build a clearer
                   picture of our shared impact.
                 </p>
 
-                <ul className="mt-7 space-y-3 text-sm text-foreground/90">
+                <ul className="mt-5 space-y-2 text-sm text-foreground/90">
                   {[
                     'Capture the activity essentials',
                     'Share outcomes and observations',
@@ -229,7 +205,7 @@ const Ambassadors = () => {
                   ))}
                 </ul>
 
-                <Button variant="nebula" size="lg" className="mt-9 w-full sm:w-fit" asChild>
+                <Button variant="nebula" size="lg" className="mt-6 w-full sm:w-fit" asChild>
                   <a href={ACTIVITY_REPORT_URL} target="_blank" rel="noopener noreferrer">
                     Submit an Activity Report
                     <ArrowUpRight className="w-5 h-5" aria-hidden="true" />
