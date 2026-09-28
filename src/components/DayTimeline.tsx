@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { 
-  Sun, Car, Laptop, Utensils, CloudSun, Navigation,
-  Radio, Eye, Moon, Satellite, Clock, CircleAlert
+  CloudSun, Navigation, Radio, Eye, Moon, Satellite, Clock, CircleAlert
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DayAnalysisStep } from '@/lib/dayAnalysis';

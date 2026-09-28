@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/lib/supabaseClient';
 import { dayAnalysisSchema, type DayAnalysis } from '@/lib/dayAnalysis';
 
 interface DayAnalysisDialogProps {
@@ -39,12 +38,18 @@ const DayAnalysisDialog = ({ onAnalysis }: DayAnalysisDialogProps) => {
     setError('');
 
     try {
-      const { data, error: functionError } = await supabase.functions.invoke('analyze-day', {
-        body: { day: description },
+      const response = await fetch('/.netlify/functions/analyze-day', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ day: description }),
       });
 
-      if (functionError) {
-        throw functionError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'The analysis request failed.');
       }
 
       const parsed = dayAnalysisSchema.safeParse(data);

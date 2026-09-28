@@ -1,11 +1,6 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 const jsonHeaders = {
-  ...corsHeaders,
   'Content-Type': 'application/json',
+  'Cache-Control': 'no-store',
 };
 
 const analysisSchema = {
@@ -97,25 +92,21 @@ interface OpenAIResponse {
   };
 }
 
-Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: jsonHeaders,
+  });
 
+export default async (request: Request) => {
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed.' }), {
-      status: 405,
-      headers: jsonHeaders,
-    });
+    return jsonResponse({ error: 'Method not allowed.' }, 405);
   }
 
-  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     console.error('OPENAI_API_KEY is not configured.');
-    return new Response(JSON.stringify({ error: 'AI analysis is not configured.' }), {
-      status: 503,
-      headers: jsonHeaders,
-    });
+    return jsonResponse({ error: 'AI analysis is not configured.' }, 503);
   }
 
   let day = '';
@@ -123,17 +114,11 @@ Deno.serve(async (request) => {
     const body = await request.json();
     day = typeof body?.day === 'string' ? body.day.trim() : '';
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid request body.' }), {
-      status: 400,
-      headers: jsonHeaders,
-    });
+    return jsonResponse({ error: 'Invalid request body.' }, 400);
   }
 
   if (day.length < 10 || day.length > 4000) {
-    return new Response(JSON.stringify({ error: 'Day description must be between 10 and 4,000 characters.' }), {
-      status: 400,
-      headers: jsonHeaders,
-    });
+    return jsonResponse({ error: 'Day description must be between 10 and 4,000 characters.' }, 400);
   }
 
   try {
@@ -169,10 +154,7 @@ Deno.serve(async (request) => {
 
     if (!openAIResponse.ok) {
       console.error('OpenAI request failed:', responseData.error?.message ?? openAIResponse.statusText);
-      return new Response(JSON.stringify({ error: 'AI analysis failed.' }), {
-        status: 502,
-        headers: jsonHeaders,
-      });
+      return jsonResponse({ error: 'AI analysis failed.' }, 502);
     }
 
     const outputText = responseData.output
@@ -182,18 +164,15 @@ Deno.serve(async (request) => {
 
     if (!outputText) {
       console.error('OpenAI response did not include structured output.');
-      return new Response(JSON.stringify({ error: 'AI analysis was incomplete.' }), {
-        status: 502,
-        headers: jsonHeaders,
-      });
+      return jsonResponse({ error: 'AI analysis was incomplete.' }, 502);
     }
 
-    return new Response(outputText, { status: 200, headers: jsonHeaders });
-  } catch (error) {
-    console.error('analyze-day failed:', error);
-    return new Response(JSON.stringify({ error: 'AI analysis is temporarily unavailable.' }), {
-      status: 500,
+    return new Response(outputText, {
+      status: 200,
       headers: jsonHeaders,
     });
+  } catch (error) {
+    console.error('analyze-day failed:', error);
+    return jsonResponse({ error: 'AI analysis is temporarily unavailable.' }, 500);
   }
-});
+};
