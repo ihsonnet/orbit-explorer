@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, SortAsc, BookOpen, Loader2, ChevronDown, Users, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Filter, SortAsc, BookOpen, Loader2, ChevronDown, Users, Sparkles, ChevronLeft, ChevronRight, ArrowRight, Telescope, PenLine } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -28,6 +29,8 @@ const Learn = () => {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  // The community posts backend is currently unavailable; show a notice instead of raw errors
+  const communityOffline = !loading && !!error;
 
   // Filter and sort posts
   const filteredPosts = useMemo(() => {
@@ -145,6 +148,7 @@ const Learn = () => {
       </section>
 
       {/* Search & Filters */}
+      {!communityOffline && (
       <section className="border-y border-border/50 bg-card/30 backdrop-blur-sm sticky top-16 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -247,6 +251,7 @@ const Learn = () => {
           </AnimatePresence>
         </div>
       </section>
+      )}
 
       {/* Active Filters */}
       {(selectedCategory || searchQuery) && (
@@ -276,6 +281,44 @@ const Learn = () => {
       )}
 
       {/* Content */}
+      {communityOffline ? (
+        <main className="flex-1 pb-24 pt-4">
+          <div className="max-w-3xl mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="card-glow rounded-[2rem] p-8 md:p-12 text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center mx-auto mb-6">
+                <PenLine className="w-6 h-6 text-primary" aria-hidden="true" />
+              </div>
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+                Community stories are paused for now
+              </h2>
+              <p className="mt-4 text-muted-foreground leading-relaxed max-w-xl mx-auto">
+                Publishing on Learn &amp; Share is temporarily unavailable while we
+                prepare its next version. You can still bring space to your
+                community through the S.P.A.C.E. Ambassador Program, or explore the
+                sky above you right now.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <Button variant="hero" size="lg" asChild>
+                  <Link to="/space-ambassador-program">
+                    Join the Ambassador Program
+                    <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                  </Link>
+                </Button>
+                <Button variant="outline" size="lg" asChild>
+                  <Link to="/sky-above-me">
+                    <Telescope className="w-5 h-5" aria-hidden="true" />
+                    Explore Sky Above Me
+                  </Link>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        </main>
+      ) : (
       <main className="flex-1 py-8">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-8">
@@ -412,6 +455,7 @@ const Learn = () => {
           </div>
         </div>
       </main>
+      )}
 
       {/* Post Modal */}
       <BlogPostModal

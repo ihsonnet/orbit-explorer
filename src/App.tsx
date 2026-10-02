@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Maintenance from "./pages/Maintenance";
 import Ambassadors from "./pages/Ambassadors";
+import AmbassadorDirectory from "./pages/AmbassadorDirectory";
 import SpaceLab from "./pages/SpaceLab";
 import { useSiteSettings } from "./hooks/useSiteSettings";
 
@@ -41,6 +42,7 @@ const AppRoutes = () => {
       <Route path="/global" element={<Global />} />
       <Route path="/learn" element={<Learn />} />
       <Route path="/space-ambassador-program" element={<Ambassadors />} />
+      <Route path="/ambassadors" element={<AmbassadorDirectory />} />
       <Route path="/space-lab" element={<SpaceLab />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminDashboard />} />

@@ -3,13 +3,7 @@ import type { FeatureCollection, Geometry } from 'geojson';
 import { Globe2, MapPin } from 'lucide-react';
 import { feature } from 'topojson-client';
 import world from '@d3-maps/atlas/world/countries/countries-110m';
-
-type AmbassadorLocation = {
-  country: string;
-  iso3: string;
-  coordinates: [number, number];
-  status: 'active' | 'developing';
-};
+import { ambassadorLocations } from '@/data/ambassadors';
 
 type CountryProperties = {
   id: string;
@@ -20,27 +14,18 @@ type CountryProperties = {
 const MAP_WIDTH = 1000;
 const MAP_HEIGHT = 500;
 
-const ambassadorLocations: AmbassadorLocation[] = [
-  { country: 'Bangladesh', iso3: 'BGD', coordinates: [90.3563, 23.685], status: 'active' },
-  { country: 'Hungary', iso3: 'HUN', coordinates: [19.5033, 47.1625], status: 'active' },
-  { country: 'Germany', iso3: 'DEU', coordinates: [10.4515, 51.1657], status: 'active' },
-  { country: 'South Korea', iso3: 'KOR', coordinates: [127.7669, 35.9078], status: 'active' },
-  { country: 'Nepal', iso3: 'NPL', coordinates: [84.124, 28.3949], status: 'active' },
-  { country: 'India', iso3: 'IND', coordinates: [78.9629, 20.5937], status: 'active' },
-  { country: 'USA', iso3: 'USA', coordinates: [-98.5795, 39.8283], status: 'active' },
-  { country: 'Canada', iso3: 'CAN', coordinates: [-106.3468, 56.1304], status: 'active' },
-  { country: 'Turkey', iso3: 'TUR', coordinates: [35.2433, 38.9637], status: 'active' },
-  { country: 'Colombia', iso3: 'COL', coordinates: [-74.2973, 4.5709], status: 'active' },
-  { country: 'Tajikistan', iso3: 'TJK', coordinates: [71.2761, 38.861], status: 'developing' },
-  { country: 'Kyrgyzstan', iso3: 'KGZ', coordinates: [74.7661, 41.2044], status: 'developing' },
-  { country: 'Mongolia', iso3: 'MNG', coordinates: [103.8467, 46.8625], status: 'developing' },
-  { country: 'Pakistan', iso3: 'PAK', coordinates: [69.3451, 30.3753], status: 'developing' },
-];
-
 const activeLocations = ambassadorLocations.filter(({ status }) => status === 'active');
 const developingLocations = ambassadorLocations.filter(
   ({ status }) => status === 'developing',
 );
+
+const formatLocationNames = (locations: typeof ambassadorLocations) => {
+  const names = locations.map(({ country }) => country);
+
+  if (names.length < 2) return names[0] ?? '';
+  if (names.length === 2) return names.join(' and ');
+  return `${names.slice(0, -1).join(', ')}, and ${names.at(-1)}`;
+};
 
 const countries = feature(
   world,
@@ -77,10 +62,8 @@ const AmbassadorMap = () => {
             >
               <title id="ambassador-map-title">Countries with S.P.A.C.E. Ambassadors</title>
               <desc id="ambassador-map-description">
-                A world map marking ambassadors in Bangladesh, Hungary, Germany,
-                South Korea, Nepal, India, the United States, Canada, Turkey, and
-                Colombia, with additional engagement developing in Tajikistan,
-                Kyrgyzstan, Mongolia, and Pakistan.
+                A world map marking active ambassadors in {formatLocationNames(activeLocations)},
+                with additional engagement developing in {formatLocationNames(developingLocations)}.
               </desc>
 
               {graticulePath && (
@@ -199,8 +182,10 @@ const AmbassadorMap = () => {
               </h2>
               <p className="mt-3 text-muted-foreground leading-relaxed">
                 Making space more approachable in their own communities—active in{' '}
-                <span className="text-foreground font-semibold">ten countries</span>,
-                with engagement developing in four more.
+                <span className="text-foreground font-semibold">
+                  {activeLocations.length} countries
+                </span>
+                , with engagement developing in {developingLocations.length} more.
               </p>
             </div>
 
