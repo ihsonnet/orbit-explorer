@@ -141,6 +141,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇧🇩',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/sadia-tabassum-raisa.webp',
   },
   {
     name: 'Mehbuba Sharmin',
@@ -149,6 +150,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇧🇩',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/mehbuba-sharmin.webp',
   },
   {
     name: 'Lowell',
@@ -157,6 +159,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇺🇸',
     region: 'North America',
     status: 'active',
+    photo: '/ambassador-photos/lowell.webp',
   },
   {
     name: 'Sufia Akter Mim',
@@ -165,6 +168,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇭🇺',
     region: 'Central Europe',
     status: 'active',
+    photo: '/ambassador-photos/sufia-akter-mim.webp',
   },
   {
     name: 'Neha Tanveer',
@@ -173,6 +177,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇵🇰',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/neha-tanveer.webp',
   },
   {
     name: 'Mausam Majhi',
@@ -181,6 +186,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇳🇵',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/mausam-majhi.webp',
   },
   {
     name: 'Kerim Kyzy Ayana',
@@ -189,6 +195,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇰🇬',
     region: 'Central Asia',
     status: 'active',
+    photo: '/ambassador-photos/kerim-kyzy-ayana.webp',
   },
   {
     name: 'Davis Ben',
@@ -205,6 +212,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇺🇸',
     region: 'North America',
     status: 'active',
+    photo: '/ambassador-photos/aheer-mehdi.webp',
   },
   {
     name: 'Madhurya Majhi',
@@ -213,6 +221,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇳🇵',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/madhurya-majhi.webp',
   },
   {
     name: 'Yousuf Gedi',
@@ -221,6 +230,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇰🇪',
     region: 'East Africa',
     status: 'active',
+    photo: '/ambassador-photos/yousuf-gedi.webp',
   },
   {
     name: 'Taslima Khan',
@@ -229,6 +239,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇮🇳',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/taslima-khan.webp',
   },
   {
     name: 'Jenisha Rodrigues',
@@ -237,6 +248,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇮🇳',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/jenisha-rodrigues.webp',
   },
   {
     name: 'Zahid Khan',
@@ -245,6 +257,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇮🇳',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/zahid-khan.webp',
   },
   {
     name: 'Agha Ghazi Abbas',
@@ -253,6 +266,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇵🇰',
     region: 'South Asia',
     status: 'active',
+    photo: '/ambassador-photos/agha-ghazi-abbas.webp',
   },
   {
     name: 'Sorefa Akter',
@@ -269,6 +283,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     flag: '🇹🇷',
     region: 'West Asia',
     status: 'active',
+    photo: '/ambassador-photos/mishra-gokten-sude.webp',
   },
   {
     name: 'Eric Cao',
@@ -303,6 +318,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     region: 'Central Europe',
     status: 'active',
     isNew: true,
+    photo: '/ambassador-photos/bendeguz-kiss.webp',
   },
   {
     name: 'Creamie Inthavong',
@@ -312,6 +328,7 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     region: 'Southeast Asia',
     status: 'active',
     isNew: true,
+    photo: '/ambassador-photos/creamie-inthavong.webp',
   },
   {
     name: 'Fradreck Mufaro Gomo',
@@ -321,5 +338,6 @@ export const ambassadorProfiles: AmbassadorProfile[] = [
     region: 'Southern Africa',
     status: 'active',
     isNew: true,
+    photo: '/ambassador-photos/fradreck-mufaro-gomo.webp',
   },
 ];
